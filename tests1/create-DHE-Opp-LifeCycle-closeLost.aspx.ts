@@ -382,6 +382,7 @@ async function editReservationEventTime(page: Page, untilVisible: { timeout: num
   const reservationsArticle = page
     .getByRole('heading', { name: /Reservations/i })
     .locator('xpath=ancestor::article[1]');
+    await reservationsArticle.scrollIntoViewIfNeeded();
   const showActions = reservationsArticle
     .getByRole('button', { name: /Show (more )?actions/i })
     .first();
