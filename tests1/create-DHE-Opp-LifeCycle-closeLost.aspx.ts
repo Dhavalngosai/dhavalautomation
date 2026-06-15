@@ -13,8 +13,6 @@ import { testData } from '../utils/testData';
 const { waitForSalesforceReady, retryAction } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { openReservationEditDialog } = require('../lib/reservationEdit');
 
 function addDays(d: Date, days: number): Date {
   const out = new Date(d);
