@@ -1,0 +1,39 @@
+{
+  "name": "dngautomation",
+  "version": "1.0.0",
+  "description": "Playwright POC automation for Salesforce (Sales Cloud) - Record & Play + refined locators",
+  "main": "index.js",
+  "scripts": {
+    "test": "node node_modules/@playwright/test/cli.js test",
+    "test:headed": "node node_modules/@playwright/test/cli.js test --headed",
+    "test:ui": "node node_modules/@playwright/test/cli.js test --ui",
+    "test:chromium": "node node_modules/@playwright/test/cli.js test --project=chromium",
+    "codegen": "node node_modules/playwright/cli.js codegen",
+    "codegen:save": "node node_modules/playwright/cli.js codegen --save-storage=auth.json",
+    "report": "node node_modules/@playwright/test/cli.js show-report",
+    "sync:github": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-to-github.ps1",
+    "sync:github:register": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/register-hourly-github-task.ps1"
+  },
+  "keywords": [
+    "playwright",
+    "salesforce",
+    "automation",
+    "sdet"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.2.3",
+    "dotenv": "^16.6.1"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "dependencies": {
+    "playwright": "^1.58.2",
+    "playwright-core": "^1.58.2",
+    "undici-types": "^7.16.0"
+  }
+}
