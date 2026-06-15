@@ -22,6 +22,10 @@ import { testData } from '../utils/testData';
 const { waitForSalesforceReady, retryAction } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { captureOpportunityStatusScreenshot } = require('../lib/opportunityScreenshots');
+
+type OpportunityScreenshotCtx = { opportunityName: string };
 
 function addDays(d: Date, days: number): Date {
   const out = new Date(d);
@@ -451,10 +455,24 @@ function closeOpportunityDialog(page: Page) {
 }
 
 /** Path → Closed → Closed Won. Skips if already Closed Won; waits for in-flight path saves first. */
-async function markOpportunityClosedWon(page: Page, untilVisible: { timeout: number }) {
+async function markOpportunityClosedWon(
+  page: Page,
+  untilVisible: { timeout: number },
+  screenshotCtx?: OpportunityScreenshotCtx,
+) {
   await waitForPathSaveComplete(page, untilVisible.timeout);
 
   if (await page.getByText('Closed Won', { exact: true }).first().isVisible().catch(() => false)) {
+    if (screenshotCtx) {
+      await captureOpportunityStatusScreenshot(page, {
+        opportunityName: screenshotCtx.opportunityName,
+        stage: 'Closed Won',
+        waitForSalesforceReady,
+        sfReadyMs,
+        waitForStageText: 'Closed Won',
+        locatorTimeoutMs,
+      });
+    }
     return;
   }
 
@@ -468,6 +486,16 @@ async function markOpportunityClosedWon(page: Page, untilVisible: { timeout: num
     if ((await closedOption.getAttribute('aria-selected')) !== 'true') {
       await closedOption.click();
       await waitForPathSaveComplete(page, untilVisible.timeout);
+      if (screenshotCtx) {
+        await captureOpportunityStatusScreenshot(page, {
+          opportunityName: screenshotCtx.opportunityName,
+          stage: 'Closed',
+          waitForSalesforceReady,
+          sfReadyMs,
+          waitForStageText: 'Closed',
+          locatorTimeoutMs,
+        });
+      }
     }
 
     const selectClosedStageBtn = page.getByRole('button', { name: /Select Closed Stage/i });
@@ -489,6 +517,17 @@ async function markOpportunityClosedWon(page: Page, untilVisible: { timeout: num
   await expect(page.getByText('Closed Won', { exact: true }).first()).toBeVisible({
     timeout: untilVisible.timeout,
   });
+
+  if (screenshotCtx) {
+    await captureOpportunityStatusScreenshot(page, {
+      opportunityName: screenshotCtx.opportunityName,
+      stage: 'Closed Won',
+      waitForSalesforceReady,
+      sfReadyMs,
+      waitForStageText: 'Closed Won',
+      locatorTimeoutMs,
+    });
+  }
 }
 
 async function openOpportunityRecordByName(page: Page, name: string) {
@@ -691,6 +730,14 @@ test.describe('Create DHE Opportunity', () => {
     await waitForSalesforceReady(page, { timeout: sfReadyMs });
 
     await openOpportunityRecordByName(page, opportunityName);
+    await captureOpportunityStatusScreenshot(page, {
+      opportunityName,
+      stage: 'In Discussion',
+      waitForSalesforceReady,
+      sfReadyMs,
+      waitForStageText: 'In Discussion',
+      locatorTimeoutMs,
+    });
     });
 
     const oppUrlMatch = page.url().match(/\/Opportunity\/([a-zA-Z0-9]{15,18})\//);
@@ -729,7 +776,7 @@ test.describe('Create DHE Opportunity', () => {
         await openOpportunityRecordByName(page, opportunityName);
       }
 
-      await markOpportunityClosedWon(page, untilVisible);
+      await markOpportunityClosedWon(page, untilVisible, { opportunityName });
     });
     } finally {
       printStepSummary();

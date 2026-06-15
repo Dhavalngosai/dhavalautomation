@@ -13,6 +13,26 @@ import { testData } from '../utils/testData';
 const { waitForSalesforceReady, retryAction } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { captureOpportunityStatusScreenshot } = require('../lib/opportunityScreenshots');
+
+type OpportunityScreenshotCtx = { opportunityName: string };
+
+async function screenshotOpportunityStage(
+  page: Page,
+  ctx: OpportunityScreenshotCtx | undefined,
+  stage: string,
+) {
+  if (!ctx) return;
+  await captureOpportunityStatusScreenshot(page, {
+    opportunityName: ctx.opportunityName,
+    stage,
+    waitForSalesforceReady,
+    sfReadyMs,
+    waitForStageText: stage,
+    locatorTimeoutMs,
+  });
+}
 
 function addDays(d: Date, days: number): Date {
   const out = new Date(d);
@@ -629,7 +649,11 @@ async function navigateToOpportunityMainView(
 }
 
 /** Click Path → Closed and open the Close This Opportunity dialog (same flow as Closed Won). */
-async function openCloseOpportunityDialogViaPath(page: Page, untilVisible: { timeout: number }) {
+async function openCloseOpportunityDialogViaPath(
+  page: Page,
+  untilVisible: { timeout: number },
+  screenshotCtx?: OpportunityScreenshotCtx,
+) {
   await pathArticle(page).scrollIntoViewIfNeeded();
   const pathOptions = opportunityPathListbox(page);
   await pathOptions.waitFor({ state: 'visible', ...untilVisible });
@@ -638,6 +662,7 @@ async function openCloseOpportunityDialogViaPath(page: Page, untilVisible: { tim
   if ((await closedOption.getAttribute('aria-selected')) !== 'true') {
     await closedOption.click({ timeout: untilVisible.timeout });
     await waitForPathSaveComplete(page, untilVisible.timeout);
+    await screenshotOpportunityStage(page, screenshotCtx, 'Closed');
   }
 
   const selectClosedStageBtn = page.getByRole('button', { name: /Select Closed Stage/i });
@@ -741,7 +766,11 @@ async function setStageClosedLostViaEditStage(page: Page, untilVisible: { timeou
 }
 
 /** Path → Closed → Closed Lost. Skips if already Closed Lost; waits for in-flight path saves first. */
-async function markOpportunityClosedLost(page: Page, untilVisible: { timeout: number }) {
+async function markOpportunityClosedLost(
+  page: Page,
+  untilVisible: { timeout: number },
+  screenshotCtx?: OpportunityScreenshotCtx,
+) {
   const closedLostTimeout = { timeout: Math.max(untilVisible.timeout, 90_000) };
 
   await waitForPathSaveComplete(page, closedLostTimeout.timeout);
@@ -749,24 +778,28 @@ async function markOpportunityClosedLost(page: Page, untilVisible: { timeout: nu
   const stageRow = opportunityStageRow(page);
   if (await stageRow.getByText('Closed Lost', { exact: true }).isVisible().catch(() => false)) {
     await waitForOpportunityStageClosedLost(page, closedLostTimeout);
+    await screenshotOpportunityStage(page, screenshotCtx, 'Closed Lost');
     return;
   }
 
   if (await closeOpportunityDialog(page).isVisible().catch(() => false)) {
     await completeCloseOpportunityDialog(page, closedLostTimeout);
     await waitForOpportunityStageClosedLost(page, closedLostTimeout);
+    await screenshotOpportunityStage(page, screenshotCtx, 'Closed Lost');
     return;
   }
 
   try {
-    await openCloseOpportunityDialogViaPath(page, closedLostTimeout);
+    await openCloseOpportunityDialogViaPath(page, closedLostTimeout, screenshotCtx);
     await completeCloseOpportunityDialog(page, closedLostTimeout);
   } catch {
     await setStageClosedLostViaEditStage(page, closedLostTimeout);
+    await screenshotOpportunityStage(page, screenshotCtx, 'Closed Lost');
     return;
   }
 
   await waitForOpportunityStageClosedLost(page, closedLostTimeout);
+  await screenshotOpportunityStage(page, screenshotCtx, 'Closed Lost');
 }
 
 async function openOpportunityRecordByName(page: Page, name: string) {
@@ -969,6 +1002,7 @@ test.describe('Create DHE Opportunity — Closed Lost', () => {
     await waitForSalesforceReady(page, { timeout: sfReadyMs });
 
     await openOpportunityRecordByName(page, opportunityName);
+    await screenshotOpportunityStage(page, { opportunityName }, 'In Discussion');
     });
 
     const oppUrlMatch = page.url().match(/\/Opportunity\/([a-zA-Z0-9]{15,18})\//);
@@ -1008,7 +1042,7 @@ test.describe('Create DHE Opportunity — Closed Lost', () => {
         await opportunityPathListbox(page).waitFor({ state: 'visible', ...untilVisible });
         await waitForPathSaveComplete(page, untilVisible.timeout);
 
-        await markOpportunityClosedLost(page, untilVisible);
+        await markOpportunityClosedLost(page, untilVisible, { opportunityName });
       },
       120_000,
     );
