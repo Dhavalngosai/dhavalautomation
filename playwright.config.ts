@@ -8,6 +8,8 @@ try {
   /* optional */
 }
 
+const isCI = !!process.env.CI;
+
 export default defineConfig({
   testDir: './tests1',
   testMatch: ['**/*.spec.ts', '**/*.test.ts', '**/*.aspx.ts'],
@@ -16,9 +18,11 @@ export default defineConfig({
   workers: 1,
   use: {
     // Visible browser locally; headless on CI
-    headless: !!process.env.CI,
+    headless: isCI,
     baseURL: process.env.SALESFORCE_BASE_URL || 'https://test.salesforce.com',
-    viewport: { width: 1280, height: 720 },
+    // Local headed runs: maximize the real browser window (no fixed 1280x720 frame).
+    viewport: isCI ? { width: 1920, height: 1080 } : null,
+    launchOptions: isCI ? undefined : { args: ['--start-maximized'] },
     ignoreHTTPSErrors: true,
     screenshot: 'only-on-failure',
     // Keep video for every run (pass or fail); see test-results/…/video.webm in HTML report artifacts.

@@ -65,13 +65,13 @@ title DHE Opportunity Lifecycle — Playwright
 echo ============================================
 echo  DHE Opportunity Lifecycle
 echo  Project: %CD%
-echo  Spec: tests1\create-DHE-Opp-LifeCycle.spec.ts
+echo  Spec: tests1\create-DHE-Opp-LifeCycle-closeWon.spec.ts
 echo  Lightning home: %SALESFORCE_LIGHTNING_HOME_URL%
 echo  Ensure .env has SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
 echo ============================================
 echo.
 
-call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle.spec.ts -g "Closed Won" --reporter=line %*
+call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeWon.spec.ts -g "Closed Won" --reporter=line %*
 
 set "EXITCODE=%ERRORLEVEL%"
 echo.
