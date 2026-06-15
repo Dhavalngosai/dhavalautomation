@@ -13,9 +13,6 @@ playwright/.auth/
 # Sync logs
 logs/
 
-# Opportunity stage screenshots (local test evidence)
-screenshots/opportunity-status/
-
 # Local portable Git (used when system Git is unavailable)
 .tools/
 
