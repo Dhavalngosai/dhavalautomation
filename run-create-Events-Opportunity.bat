@@ -41,5 +41,7 @@ if %EXITCODE% neq 0 (
 ) else (
   echo Events opportunity flow completed.
 )
+echo.
+call "%~dp0scripts\open-playwright-report.bat"
 
 endlocal & exit /b %EXITCODE%

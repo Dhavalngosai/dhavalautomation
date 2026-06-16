@@ -60,5 +60,7 @@ if %EXITCODE% neq 0 (
 ) else (
   echo All steps completed successfully.
 )
+echo.
+call "%~dp0scripts\open-playwright-report.bat"
 
 endlocal & exit /b %EXITCODE%

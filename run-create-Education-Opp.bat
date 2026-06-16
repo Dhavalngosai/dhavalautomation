@@ -17,5 +17,7 @@ if not exist "package.json" (
 )
 
 call npm test -- "tests1/create-Education-Opp.spec.ts" %*
-exit /b %ERRORLEVEL%
+set "EXITCODE=%ERRORLEVEL%"
+call "%~dp0scripts\open-playwright-report.bat"
+exit /b %EXITCODE%
 

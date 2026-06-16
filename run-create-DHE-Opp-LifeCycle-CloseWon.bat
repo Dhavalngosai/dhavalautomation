@@ -73,7 +73,7 @@ echo  Ensure .env has SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
 echo ============================================
 echo.
 
-call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeWon.spec.ts -g "Closed Won" --reporter=line %*
+call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeWon.spec.ts -g "Closed Won" %*
 
 set "EXITCODE=%ERRORLEVEL%"
 echo.
@@ -84,9 +84,11 @@ if %EXITCODE% equ 0 (
 ) else (
   echo  STATUS: FAIL
   echo  DHE Opportunity lifecycle test failed ^(Playwright exit code %EXITCODE%^).
-  echo  See results\create-DHE-Opp-LifeCycle-CloseWon\playwright-report\ or test-results\ for details.
+  echo  See results\create-DHE-Opp-LifeCycle-CloseWon\playwright-report\ for details.
 )
 echo ============================================
+echo.
+call "%~dp0scripts\open-playwright-report.bat"
 
 REM Return success so this batch script does not report failure to callers.
 endlocal & exit /b 0

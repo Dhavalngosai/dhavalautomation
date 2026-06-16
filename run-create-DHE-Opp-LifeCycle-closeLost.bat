@@ -73,7 +73,7 @@ echo  Ensure .env has SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
 echo ============================================
 echo.
 
-call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeLost.aspx.ts --reporter=line %*
+call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeLost.aspx.ts %*
 
 set "EXITCODE=%ERRORLEVEL%"
 echo.
@@ -84,8 +84,10 @@ if %EXITCODE% equ 0 (
 ) else (
   echo  STATUS: FAIL
   echo  DHE Opportunity Closed Lost lifecycle failed with Playwright exit code %EXITCODE%.
-  echo  See results\create-DHE-Opp-LifeCycle-closeLost\playwright-report\ or test-results\ for details.
+  echo  See results\create-DHE-Opp-LifeCycle-closeLost\playwright-report\ for details.
 )
 echo ============================================
+echo.
+call "%~dp0scripts\open-playwright-report.bat"
 
 endlocal & exit /b 0
