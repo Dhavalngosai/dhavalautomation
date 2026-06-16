@@ -12,16 +12,18 @@
  *
  * Waits: optional SALESFORCE_LOCATOR_TIMEOUT_MS (default 30000, slightly above playwright.config actionTimeout).
  *        After big navigations, waitForSalesforceReady lets Lightning settle (networkidle, brief spinner handling).
- * Retries: this spec uses retries: 0 (no full test restart). Post-create phases retry in-place via runPhase()
- *          (optional SALESFORCE_STEP_RETRY_MS, default 45000). Login + create opp are not re-run on phase retry.
+ * Retries: retries: 0 (no full test restart). Failed steps retry in-place via runPhase()/runStep({ retry: true })
+ *          (optional SALESFORCE_STEP_RETRY_MS, default 45000). Create opp is not retried (avoids duplicate records).
  */
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { testData } from '../utils/testData';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { waitForSalesforceReady, retryAction } = require('../lib/waitHelpers');
+const { waitForSalesforceReady } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { createStepRunner } = require('../lib/stepRunner');
 
 function addDays(d: Date, days: number): Date {
   const out = new Date(d);
@@ -202,78 +204,9 @@ async function openAddProductsDialog(page: Page, untilVisible: { timeout: number
   await productModal.waitFor({ state: 'visible', ...untilVisible });
 }
 
-type StepStatus = 'PASS' | 'FAIL';
-
 interface StepRecord {
   label: string;
-  status: StepStatus;
-}
-
-const ANSI_GREEN = '\x1b[32m';
-const ANSI_RED = '\x1b[31m';
-const ANSI_RESET = '\x1b[0m';
-
-function colorPass(text: string): string {
-  return `${ANSI_GREEN}${text}${ANSI_RESET}`;
-}
-
-function colorFail(text: string): string {
-  return `${ANSI_RED}${text}${ANSI_RESET}`;
-}
-
-/** Re-run only this phase on failure (same browser session — does not restart login/create). */
-function createStepRunner(stepResults: StepRecord[]) {
-  const logStep = (label: string, status: StepStatus, detail?: string) => {
-    const tag = status === 'PASS' ? colorPass('[PASS]') : colorFail('[FAIL]');
-    const suffix = detail ? ` — ${status === 'FAIL' ? colorFail(detail) : detail}` : '';
-    console.log(`${tag} ${label}${suffix}`);
-  };
-
-  async function runStep<T>(label: string, fn: () => Promise<T>): Promise<T> {
-    try {
-      const result = await test.step(label, fn);
-      stepResults.push({ label, status: 'PASS' });
-      logStep(label, 'PASS');
-      return result;
-    } catch (error) {
-      const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-      stepResults.push({ label, status: 'FAIL' });
-      logStep(label, 'FAIL', message);
-      throw error;
-    }
-  }
-
-  async function runPhase<T>(label: string, fn: () => Promise<T>, timeoutMs = stepRetryMs): Promise<T> {
-    try {
-      const result = await retryAction(() => test.step(label, fn), { timeoutMs, intervalMs: 1_500 });
-      stepResults.push({ label, status: 'PASS' });
-      logStep(label, 'PASS');
-      return result;
-    } catch (error) {
-      const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-      stepResults.push({ label, status: 'FAIL' });
-      logStep(label, 'FAIL', message);
-      throw error;
-    }
-  }
-
-  function printStepSummary() {
-    const passed = stepResults.filter((s) => s.status === 'PASS').length;
-    const failed = stepResults.filter((s) => s.status === 'FAIL').length;
-    console.log('\n============================================');
-    console.log(' STEP SUMMARY');
-    for (const step of stepResults) {
-      const tag = step.status === 'PASS' ? colorPass('[PASS]') : colorFail('[FAIL]');
-      console.log(`  ${tag} ${step.label}`);
-    }
-    console.log(
-      `  Total: ${stepResults.length}  Passed: ${colorPass(String(passed))}  Failed: ${colorFail(String(failed))}`,
-    );
-    console.log(`  OVERALL: ${failed === 0 ? colorPass('PASS') : colorFail('FAIL')}`);
-    console.log('============================================\n');
-  }
-
-  return { runStep, runPhase, printStepSummary };
+  status: 'PASS' | 'FAIL';
 }
 
 /** Click Next on the topmost open Lightning modal/dialog. */
@@ -534,7 +467,7 @@ test.describe('Create DHE Opportunity', () => {
     const closeMmDdYyyy = toMmDdYyyy(closeDate);
 
     const stepResults: StepRecord[] = [];
-    const { runStep, runPhase, printStepSummary } = createStepRunner(stepResults);
+    const { runStep, runPhase, printStepSummary } = createStepRunner(test, stepResults, stepRetryMs);
 
     try {
     await runStep('Login and open Salesforce home', async () => {
@@ -544,7 +477,7 @@ test.describe('Create DHE Opportunity', () => {
         sfReadyMs,
         untilVisible,
       });
-    });
+    }, { retry: true });
 
     await runStep('Create DHE Opportunity', async () => {
     const opportunitiesLink = page.getByRole('link', { name: 'Opportunities' });
