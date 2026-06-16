@@ -9,6 +9,7 @@ REM   run-create-Education-Opp.bat --project=chromium
 REM   run-create-Education-Opp.bat --list
 
 cd /d "%~dp0"
+set "PLAYWRIGHT_RESULTS_SUBDIR=create-Education-Opp"
 
 if not exist "package.json" (
   echo ERROR: package.json not found. Please run this from the repo root.

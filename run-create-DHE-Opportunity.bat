@@ -19,6 +19,7 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home"
+set "PLAYWRIGHT_RESULTS_SUBDIR=create-DHE-Opportunity"
 
 title Create Opportunity — Playwright
 

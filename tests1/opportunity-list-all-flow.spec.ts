@@ -1,7 +1,7 @@
 /**
  * Flow orchestrated by run-opportunity-tests.bat (sets SALESFORCE_OPPORTUNITY_LIST_URL, etc.).
- * On failure, test-results/opp-flow-failed.json contains { "step": N }. Re-run the same .bat to resume from step N (not from login if session was saved).
- * Full reset: delete test-results/opp-flow-failed.json and test-results/opp-flow-auth.json
+ * On failure, results/<subdir>/test-results/opp-flow-failed.json contains { "step": N }. Re-run the same .bat to resume from step N (not from login if session was saved).
+ * Full reset: delete opp-flow-failed.json and opp-flow-auth.json under that batch's test-results folder.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -15,7 +15,10 @@ const { selectOpportunityEventsRecordType } = require('../lib/recordTypePicker')
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { clickRecordTypeNextAndWait } = require('../pages/NewOpportunityPage');
 
-const RESULTS = path.join(process.cwd(), 'test-results');
+const resultsSubdir = process.env.PLAYWRIGHT_RESULTS_SUBDIR?.trim();
+const RESULTS = resultsSubdir
+  ? path.join(process.cwd(), 'results', resultsSubdir, 'test-results')
+  : path.join(process.cwd(), 'test-results');
 const AUTH_JSON = path.join(RESULTS, 'opp-flow-auth.json');
 const FAILED_JSON = path.join(RESULTS, 'opp-flow-failed.json');
 

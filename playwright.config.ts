@@ -10,12 +10,19 @@ try {
 
 const isCI = !!process.env.CI;
 
+// Set PLAYWRIGHT_RESULTS_SUBDIR in batch runners → results/<subdir>/test-results + playwright-report
+const resultsSubdir = process.env.PLAYWRIGHT_RESULTS_SUBDIR?.trim();
+const resultsRoot = resultsSubdir ? path.join('results', resultsSubdir) : '';
+const outputDir = resultsRoot ? path.join(resultsRoot, 'test-results') : 'test-results';
+const htmlReportDir = resultsRoot ? path.join(resultsRoot, 'playwright-report') : 'playwright-report';
+
 export default defineConfig({
   testDir: './tests1',
   testMatch: ['**/*.spec.ts', '**/*.test.ts', '**/*.aspx.ts'],
   timeout: 90000,
   retries: 1,
   workers: 1,
+  outputDir,
   use: {
     // Visible browser locally; headless on CI
     headless: isCI,
@@ -31,5 +38,5 @@ export default defineConfig({
     actionTimeout: 20000,
     navigationTimeout: 45000,
   },
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [['html', { outputFolder: htmlReportDir, open: 'never' }], ['list']],
 });

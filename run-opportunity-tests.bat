@@ -26,17 +26,18 @@ REM    SALESFORCE_EVENTS_RECORD_TYPE_LABEL_FOR=012060000015KAUAA2   (label for= 
 REM    SALESFORCE_EVENTS_RECORD_TYPE_RADIO_INDEX=2                 (0-based; 2 = 3rd radio in dialog)
 REM
 REM  Retry without a full restart:
-REM    test-results\opp-flow-failed.json holds {"step":N} on failure — re-run this batch.
-REM    test-results\opp-flow-auth.json skips login when present and step > 1.
+REM    results\opportunity-list-all-flow\test-results\opp-flow-failed.json holds {"step":N} on failure — re-run this batch.
+REM    results\opportunity-list-all-flow\test-results\opp-flow-auth.json skips login when present and step > 1.
 REM
 REM  Full reset (always start at step 1):
-REM    del test-results\opp-flow-failed.json
-REM    del test-results\opp-flow-auth.json
+REM    del results\opportunity-list-all-flow\test-results\opp-flow-failed.json
+REM    del results\opportunity-list-all-flow\test-results\opp-flow-auth.json
 REM ============================================================================
 setlocal EnableExtensions
 cd /d "%~dp0"
 
 set "SALESFORCE_OPPORTUNITY_LIST_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/o/Opportunity/list?filterName=AllOpportunities"
+set "PLAYWRIGHT_RESULTS_SUBDIR=opportunity-list-all-flow"
 
 title Opportunity list flow — Playwright
 
@@ -55,7 +56,7 @@ echo.
 if %EXITCODE% neq 0 (
   echo Tests finished with errors ^(exit code %EXITCODE%^).
   echo Look for: [Opportunity flow] Step ... FAILED
-  echo Retry: run this batch again. Full reset: delete test-results\opp-flow-failed.json and opp-flow-auth.json
+  echo Retry: run this batch again. Full reset: delete results\opportunity-list-all-flow\test-results\opp-flow-failed.json and opp-flow-auth.json
 ) else (
   echo All steps completed successfully.
 )

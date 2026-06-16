@@ -59,6 +59,7 @@ if not exist "package.json" (
 )
 
 set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home"
+set "PLAYWRIGHT_RESULTS_SUBDIR=create-DHE-Opp-LifeCycle-closeLost"
 
 title DHE Opportunity Lifecycle - Closed Lost
 
@@ -67,6 +68,7 @@ echo  DHE Opportunity Lifecycle - Closed Lost
 echo  Project: %CD%
 echo  Spec: tests1\create-DHE-Opp-LifeCycle-closeLost.aspx.ts
 echo  Lightning home: %SALESFORCE_LIGHTNING_HOME_URL%
+echo  Results folder: results\create-DHE-Opp-LifeCycle-closeLost\
 echo  Ensure .env has SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
 echo ============================================
 echo.
@@ -82,7 +84,7 @@ if %EXITCODE% equ 0 (
 ) else (
   echo  STATUS: FAIL
   echo  DHE Opportunity Closed Lost lifecycle failed with Playwright exit code %EXITCODE%.
-  echo  See playwright-report\ or test-results\ for details.
+  echo  See results\create-DHE-Opp-LifeCycle-closeLost\playwright-report\ or test-results\ for details.
 )
 echo ============================================
 
