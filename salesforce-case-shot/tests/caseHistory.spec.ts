@@ -1,6 +1,34 @@
-import { test } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
 import * as XLSX from 'xlsx';
 import fs from 'fs';
+import path from 'path';
+
+/** Paths relative to salesforce-case-shot/ (works when run from repo root or subfolder). */
+const CASE_SHOT_ROOT = path.resolve(__dirname, '..');
+const EXCEL_PATH = path.join(CASE_SHOT_ROOT, 'data', 'cases.xlsx');
+const SCREENSHOT_FOLDER = path.join(CASE_SHOT_ROOT, 'screenshots');
+
+async function returnToCaseList(page: Page, caseListUrl: string) {
+  await page.goto(caseListUrl);
+  await page.waitForTimeout(5000);
+}
+
+/** After list search, return true if the case row/link is visible. */
+async function isCaseInSearchResults(page: Page, caseNo: string) {
+  const emptyList = page.getByText(/no items to display|no results|nothing to see here/i);
+  if (await emptyList.first().isVisible({ timeout: 2_000 }).catch(() => false)) {
+    return false;
+  }
+
+  const caseLink = page
+    .getByRole('link', { name: caseNo, exact: true })
+    .or(page.getByRole('row', { name: new RegExp(caseNo) }).getByRole('link', { name: caseNo, exact: true }));
+
+  return caseLink
+    .first()
+    .isVisible({ timeout: 8_000 })
+    .catch(() => false);
+}
 
 test.describe('Salesforce Case History Screenshots - Skip Missing History', () => {
 
@@ -11,21 +39,20 @@ test.describe('Salesforce Case History Screenshots - Skip Missing History', () =
     // ==================================
     // CONFIG
     // ==================================
-    const USERNAME = 'dgosai@horizontal.com.uat';
+    const USERNAME = 'dgosai@horizontal.com.qa';
     const PASSWORD = 'Dhaval@123456';
 
     const BASE_URL =
-      'https://dhe-org2--uat.sandbox.my.salesforce.com/';
+      'https://dhe-org2--qa.sandbox.my.salesforce.com/';
 
     const CASE_LIST_URL =
-      'https://dhe-org2--uat.sandbox.lightning.force.com/lightning/o/Case/list/?filterName=AllOpenCases';
+      'https://dhe-org2--qa.sandbox.lightning.force.com/lightning/o/Case/list/?filterName=AllOpenCases';
 
-    const EXCEL_PATH =
-      './data/cases.xlsx';
+    if (!fs.existsSync(EXCEL_PATH)) {
+      throw new Error(`Excel file not found: ${EXCEL_PATH}`);
+    }
 
-    const SCREENSHOT_FOLDER =
-      'C:\\Users\\dgosai\\dngautomation\\salesforce-case-shot\\screenshots';
-
+      
     // ==================================
     // CREATE FOLDER
     // ==================================
@@ -97,9 +124,18 @@ test.describe('Salesforce Case History Screenshots - Skip Missing History', () =
         await page.waitForTimeout(4000);
 
         // ==========================
-        // OPEN CASE
+        // OPEN CASE (skip if not in search results)
         // ==========================
-        await page.getByText(caseNo, { exact: true }).first().click();
+        if (!(await isCaseInSearchResults(page, caseNo))) {
+          console.log(`Case not found in search: ${caseNo} - Skipped`);
+          await returnToCaseList(page, CASE_LIST_URL);
+          continue;
+        }
+
+        const caseLink = page
+          .getByRole('link', { name: caseNo, exact: true })
+          .or(page.getByText(caseNo, { exact: true }));
+        await caseLink.first().click();
 
         await page.waitForTimeout(5000);
 
@@ -131,8 +167,7 @@ test.describe('Salesforce Case History Screenshots - Skip Missing History', () =
 
         if (!found) {
           console.log(`Case History not found: ${caseNo} - Skipped`);
-          await page.goto(CASE_LIST_URL);
-          await page.waitForTimeout(5000);
+          await returnToCaseList(page, CASE_LIST_URL);
           continue;
         }
 
@@ -148,21 +183,23 @@ test.describe('Salesforce Case History Screenshots - Skip Missing History', () =
         // SCREENSHOT
         // ==========================
         await page.screenshot({
-          path: `${SCREENSHOT_FOLDER}\\${caseNo}.png`,
-          fullPage: true
+          path: path.join(SCREENSHOT_FOLDER, `${caseNo}.png`),
+          fullPage: true,
         });
 
         console.log(`Saved: ${caseNo}.png`);
 
       } catch (error) {
-        console.log(`Failed: ${caseNo}`);
+        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        console.log(`Failed: ${caseNo} - ${message}`);
+        await returnToCaseList(page, CASE_LIST_URL).catch(() => {});
+        continue;
       }
 
       // ==========================
       // RETURN TO CASE LIST
       // ==========================
-      await page.goto(CASE_LIST_URL);
-      await page.waitForTimeout(5000);
+      await returnToCaseList(page, CASE_LIST_URL);
     }
 
   });
