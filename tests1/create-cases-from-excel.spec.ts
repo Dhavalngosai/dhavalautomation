@@ -4,10 +4,15 @@
  *
  * Excel: data/create-cases.xlsx — columns (header row):
  *   User, Subject, Description, Account Name, Asset, Sub Asset, Case Type, Sub Type
- * User is optional (Case Owner lookup). Other fields are used when non-empty.
+ *
+ * Flow per row:
+ *   1. Admin login (once; main tab stays admin)
+ *   2. Setup → Users → search User from Excel → Login as that user
+ *   3. Create Case with remaining Excel fields
  *
  * Required in .env: SALESFORCE_USERNAME, SALESFORCE_PASSWORD
- * Optional: SALESFORCE_LIGHTNING_HOME_URL, SALESFORCE_CASE_LIST_URL
+ * Optional: SALESFORCE_LIGHTNING_HOME_URL, SALESFORCE_CASE_NEW_URL,
+ *           SALESFORCE_CASE_RECORD_TYPE_LABEL, SALESFORCE_SETUP_USERS_LIST_URL
  */
 import { test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -20,6 +25,10 @@ import { testData } from '../utils/testData';
 const { waitForSalesforceReady } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { loginAsUserFromSetup, closePageSafe } = require('../lib/salesforceLoginAsUser');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { openNewCaseForm } = require('../lib/caseForm');
 
 const EXCEL_PATH = path.resolve(__dirname, '..', 'data', 'create-cases.xlsx');
 
@@ -73,9 +82,14 @@ function readCaseRows(excelPath: string): CaseRow[] {
     const subject = pickCell(row, 'Subject');
     if (!subject) return;
 
+    const user = pickCell(row, 'User', 'Case Owner', 'Owner');
+    if (!user) {
+      throw new Error(`Excel row ${index + 2}: User is required (Setup → Users → Login as user).`);
+    }
+
     cases.push({
       rowNumber: index + 2,
-      user: pickCell(row, 'User', 'Case Owner', 'Owner'),
+      user,
       subject,
       description: pickCell(row, 'Description'),
       accountName: pickCell(row, 'Account Name', 'Account', 'AccountName'),
@@ -93,26 +107,8 @@ function readCaseRows(excelPath: string): CaseRow[] {
   return cases;
 }
 
-function caseListUrl(lightningHome: string): string {
-  const fromEnv = process.env.SALESFORCE_CASE_LIST_URL?.trim();
-  if (fromEnv) return fromEnv;
-  const origin = new URL(lightningHome).origin;
-  return `${origin}/lightning/o/Case/list?filterName=__Recent`;
-}
-
-async function openNewCaseForm(page: Page, listUrl: string): Promise<void> {
-  await page.goto(listUrl);
-  await waitForSalesforceReady(page, { timeout: sfReadyMs });
-
-  const newBtn = page.getByRole('button', { name: 'New', exact: true });
-  await newBtn.waitFor({ state: 'visible', ...untilVisible });
-  await newBtn.click();
-
-  const nextBtn = page.getByRole('button', { name: 'Next', exact: true });
-  if (await nextBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await nextBtn.click();
-    await waitForSalesforceReady(page, { timeout: sfReadyMs });
-  }
+function caseFormOpts() {
+  return { sfReadyMs, untilVisible: { timeout: Math.max(locatorTimeoutMs, 60_000) } };
 }
 
 async function pickComboboxOption(
@@ -145,23 +141,8 @@ async function pickComboboxOption(
   await option.first().click({ timeout: locatorTimeoutMs });
 }
 
-async function fillCaseOwner(page: Page, userName: string): Promise<void> {
-  if (!userName) return;
-
-  const ownerCombobox = page
-    .getByRole('combobox', { name: /Case Owner|Owner/i })
-    .or(page.getByRole('combobox', { name: 'User' }));
-  if (!(await ownerCombobox.first().isVisible({ timeout: 3_000 }).catch(() => false))) {
-    return;
-  }
-
-  await pickComboboxOption(page, /Case Owner|Owner|^User$/i, userName, { lookup: true });
-}
-
-async function createCaseFromRow(page: Page, row: CaseRow, listUrl: string): Promise<void> {
-  await openNewCaseForm(page, listUrl);
-
-  await fillCaseOwner(page, row.user);
+async function createCaseFromRow(page: Page, row: CaseRow, lightningHome: string): Promise<void> {
+  await openNewCaseForm(page, lightningHome, caseFormOpts());
 
   const subjectField = page.getByRole('textbox', { name: 'Subject' });
   await subjectField.waitFor({ state: 'visible', ...untilVisible });
@@ -211,9 +192,9 @@ async function createCaseFromRow(page: Page, row: CaseRow, listUrl: string): Pro
 }
 
 test.describe('Create Cases from Excel', () => {
-  test('login → create each case row from Excel', async ({ page }) => {
+  test('login → login-as user → create each case from Excel', async ({ page }) => {
     const caseRows = readCaseRows(EXCEL_PATH);
-    test.setTimeout(Math.max(300_000, caseRows.length * 120_000));
+    test.setTimeout(Math.max(300_000, caseRows.length * 180_000));
     test.skip(!testData.username || !testData.password, 'Set SALESFORCE_USERNAME and SALESFORCE_PASSWORD in .env');
 
     await page.setDefaultTimeout(locatorTimeoutMs);
@@ -225,24 +206,34 @@ test.describe('Create Cases from Excel', () => {
       untilVisible,
     });
 
-    const listUrl = caseListUrl(lightningHome);
+    const loginAsOpts = { lightningHome, sfReadyMs, untilVisible };
     const results: { row: CaseRow; ok: boolean; error?: string }[] = [];
 
     console.log(`\nCreating ${caseRows.length} case(s) from ${EXCEL_PATH}\n`);
 
     for (let i = 0; i < caseRows.length; i++) {
       const row = caseRows[i];
-      const label = `[${i + 1}/${caseRows.length}] Excel row ${row.rowNumber}: ${row.subject}`;
+      const label = `[${i + 1}/${caseRows.length}] Excel row ${row.rowNumber}: ${row.subject} (as ${row.user})`;
       console.log(`${label} — starting`);
 
+      let userPage: Page | null = null;
+
       try {
-        await createCaseFromRow(page, row, listUrl);
+        userPage = await loginAsUserFromSetup(page, row.user, loginAsOpts);
+        console.log(`${label} — logged in as ${row.user}`);
+
+        if (!userPage) {
+          throw new Error('Login-as flow did not open a user session');
+        }
+        await createCaseFromRow(userPage, row, lightningHome);
         results.push({ row, ok: true });
         console.log(`${label} — PASS`);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         results.push({ row, ok: false, error: message });
         console.error(`${label} — FAIL: ${message}`);
+      } finally {
+        if (userPage) await closePageSafe(userPage);
       }
     }
 

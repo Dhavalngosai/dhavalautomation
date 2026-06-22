@@ -10,7 +10,7 @@ const outPath = path.join(__dirname, '..', 'data', 'create-cases.xlsx');
 
 const rows = [
   {
-    User: '',
+    User: 'Dhaval Gosai',
     Subject: 'Testing 220626 01',
     Description: 'Testing',
     'Account Name': 'Dhaval Gosai',

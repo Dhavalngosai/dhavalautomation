@@ -5,8 +5,8 @@ REM ============================================================================
 REM  Runs: tests1\create-cases-from-excel.spec.ts
 REM
 REM  Data: data\create-cases.xlsx
-REM    Columns: User, Subject, Description, Account Name, Asset, Sub Asset,
-REM             Case Type, Sub Type
+REM    Columns: User (required), Subject, Description, Account Name, Asset,
+REM             Sub Asset, Case Type, Sub Type
 REM
 REM  Sample file: node scripts\create-sample-cases-xlsx.js
 REM
@@ -16,7 +16,10 @@ REM
 REM  Optional in .env:
 REM    SALESFORCE_BASE_URL=https://test.salesforce.com/
 REM    SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home
-REM    SALESFORCE_CASE_LIST_URL=.../lightning/o/Case/list?filterName=__Recent
+REM    SALESFORCE_CASE_NEW_URL=.../lightning/o/Case/new
+REM    SALESFORCE_CASE_RECORD_TYPE_LABEL=Support Case
+REM
+REM  Flow: Admin login → Setup → Users → search User → Login → New Case
 REM
 REM  Results: results\create-cases-from-excel\
 REM  Extra args: run-create-cases-from-excel.bat --headed
