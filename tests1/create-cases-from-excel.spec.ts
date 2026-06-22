@@ -19,7 +19,7 @@ import { testData } from '../utils/testData';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { waitForSalesforceReady } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { loginToSandboxAndOpenHome, normalizeLightningHomeUrl } = require('../lib/salesforceLogin');
+const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
 
 const EXCEL_PATH = path.resolve(__dirname, '..', 'data', 'create-cases.xlsx');
 
