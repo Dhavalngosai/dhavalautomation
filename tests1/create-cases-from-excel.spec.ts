@@ -3,7 +3,10 @@
  * Run via run-create-cases-from-excel.bat (or: npm test -- tests1/create-cases-from-excel.spec.ts).
  *
  * Excel: data/create-cases.xlsx — columns (header row):
- *   User, Subject, Description, Account Name, Asset, Sub Asset, Case Type, Sub Type, Case Number
+ *   User, Subject, Description, Account Name, Asset, Sub Asset, Area, Sub Area,
+ *   Case Type, Sub Type, Case Number
+ *
+ * Area + Sub Area are filled only when Sub Asset is Riverland™ Dubai.
  *
  * Flow per row (fresh browser each time):
  *   1. Admin login → Setup → Users → Login as Excel User
@@ -43,6 +46,8 @@ interface CaseRow {
   accountName: string;
   asset: string;
   subAsset: string;
+  area: string;
+  subArea: string;
   caseType: string;
   subType: string;
   caseNumber: string;

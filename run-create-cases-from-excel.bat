@@ -6,7 +6,8 @@ REM  Runs: tests1\create-cases-from-excel.spec.ts
 REM
 REM  Data: data\create-cases.xlsx
 REM    Columns: User (required), Subject, Description, Account Name, Asset,
-REM             Sub Asset, Case Type, Sub Type, Case Number (filled after save)
+REM             Sub Asset, Area, Sub Area (Riverland™ Dubai only), Case Type, Sub Type,
+REM             Case Number (filled after save)
 REM
 REM  Each row runs in a fresh browser; rows with Case Number are skipped.
 REM
