@@ -18,6 +18,7 @@ const rows = [
     'Sub Asset': '',
     'Case Type': 'AD - Marketing',
     'Sub Type': 'Influencer Visit',
+    'Case Number': '',
   },
 ];
 
