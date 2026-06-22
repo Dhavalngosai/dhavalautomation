@@ -22,13 +22,11 @@ import path from 'path';
 import { testData } from '../utils/testData';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { waitForSalesforceReady } = require('../lib/waitHelpers');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginAsUserFromSetup, closePageSafe } = require('../lib/salesforceLoginAsUser');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { openNewCaseForm } = require('../lib/caseForm');
+const { fillAndSaveCaseFromRow } = require('../lib/caseForm');
 
 const EXCEL_PATH = path.resolve(__dirname, '..', 'data', 'create-cases.xlsx');
 
@@ -111,86 +109,6 @@ function caseFormOpts() {
   return { sfReadyMs, untilVisible: { timeout: Math.max(locatorTimeoutMs, 60_000) } };
 }
 
-async function pickComboboxOption(
-  page: Page,
-  comboboxName: string | RegExp,
-  value: string,
-  opts?: { lookup?: boolean; exact?: boolean }
-): Promise<void> {
-  if (!value) return;
-
-  const combobox = page.getByRole('combobox', { name: comboboxName });
-  await combobox.scrollIntoViewIfNeeded();
-  await combobox.click();
-
-  if (opts?.lookup) {
-    await combobox.fill(value);
-    await page.waitForTimeout(1_500);
-    const option = page
-      .getByRole('option', { name: value, exact: opts.exact ?? true })
-      .or(page.locator('[role="option"]').filter({ hasText: value }))
-      .or(page.getByTitle(value, { exact: opts.exact ?? true }));
-    await option.first().click({ timeout: locatorTimeoutMs });
-    return;
-  }
-
-  const option = page
-    .getByRole('option', { name: value, exact: opts?.exact ?? true })
-    .or(page.locator('span').filter({ hasText: value }).first())
-    .or(page.getByText(value, { exact: opts?.exact ?? true }));
-  await option.first().click({ timeout: locatorTimeoutMs });
-}
-
-async function createCaseFromRow(page: Page, row: CaseRow, lightningHome: string): Promise<void> {
-  await openNewCaseForm(page, lightningHome, caseFormOpts());
-
-  const subjectField = page.getByRole('textbox', { name: 'Subject' });
-  await subjectField.waitFor({ state: 'visible', ...untilVisible });
-  await subjectField.fill(row.subject);
-
-  if (row.description) {
-    await page.getByRole('textbox', { name: 'Description' }).fill(row.description);
-  }
-
-  if (row.accountName) {
-    await pickComboboxOption(page, 'Account Name', row.accountName, { lookup: true });
-  }
-
-  if (row.asset) {
-    await pickComboboxOption(page, /^Asset$/i, row.asset);
-  }
-
-  if (row.subAsset) {
-    await pickComboboxOption(page, 'Sub Asset', row.subAsset);
-  }
-
-  if (row.caseType) {
-    await pickComboboxOption(page, 'Case Type', row.caseType, { exact: false });
-  }
-
-  if (row.subType) {
-    await pickComboboxOption(page, 'Sub Type', row.subType, { exact: false });
-  }
-
-  const saveBtn = page.getByRole('button', { name: 'Save', exact: true });
-  await saveBtn.click();
-  await waitForSalesforceReady(page, { timeout: sfReadyMs });
-
-  const snag = page.getByRole('heading', { name: 'We hit a snag.' });
-  if (await snag.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    if (row.subType) {
-      await pickComboboxOption(page, 'Sub Type', row.subType, { exact: false });
-      await saveBtn.click();
-      await waitForSalesforceReady(page, { timeout: sfReadyMs });
-    }
-    if (await snag.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      throw new Error('Save failed — validation errors remain on the form');
-    }
-  }
-
-  await page.waitForURL(/\/lightning\/r\/Case\//, { timeout: locatorTimeoutMs }).catch(() => {});
-}
-
 test.describe('Create Cases from Excel', () => {
   test('login → login-as user → create each case from Excel', async ({ page }) => {
     const caseRows = readCaseRows(EXCEL_PATH);
@@ -225,7 +143,7 @@ test.describe('Create Cases from Excel', () => {
         if (!userPage) {
           throw new Error('Login-as flow did not open a user session');
         }
-        await createCaseFromRow(userPage, row, lightningHome);
+        await fillAndSaveCaseFromRow(userPage, row, lightningHome, caseFormOpts());
         results.push({ row, ok: true });
         console.log(`${label} — PASS`);
       } catch (err) {
