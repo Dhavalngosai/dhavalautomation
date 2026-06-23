@@ -58,7 +58,7 @@ if not exist "package.json" (
   exit /b 1
 )
 
-set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home"
+set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--uat.sandbox.lightning.force.com/lightning/page/home"
 set "PLAYWRIGHT_RESULTS_SUBDIR=create-DHE-Opp-LifeCycle-CloseWon"
 
 title DHE Opportunity Lifecycle — Playwright

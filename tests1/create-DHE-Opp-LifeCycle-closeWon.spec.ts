@@ -22,6 +22,8 @@ import { testData } from '../utils/testData';
 const { waitForSalesforceReady, retryAction } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { selectOpportunityDHERecordType } = require('../lib/recordTypePicker');
 
 function addDays(d: Date, days: number): Date {
   const out = new Date(d);
@@ -555,11 +557,20 @@ test.describe('Create DHE Opportunity', () => {
     // Substring "New" matches "new" in "(opens in new tab)" on unrelated footer links without exact: true.
     const newOpp = page.getByRole('button', { name: 'New', exact: true });
     await newOpp.waitFor({ state: 'visible', ...untilVisible });
+    await newOpp.scrollIntoViewIfNeeded();
     await newOpp.click();
 
-    const recordTypeNext = page.getByRole('button', { name: 'Next', exact: true });
-    await recordTypeNext.waitFor({ state: 'visible', ...untilVisible });
-    await recordTypeNext.click();
+    await page.getByRole('dialog').filter({ hasText: /New Opportunity|Select a record type/i })
+      .first()
+      .waitFor({ state: 'visible', timeout: 60_000 })
+      .catch(() => {});
+
+    const needsRecordTypeNext = await selectOpportunityDHERecordType(page);
+    if (needsRecordTypeNext) {
+      const recordTypeNext = page.getByRole('button', { name: 'Next', exact: true });
+      await recordTypeNext.waitFor({ state: 'visible', ...untilVisible });
+      await recordTypeNext.click();
+    }
     await waitForSalesforceReady(page, { timeout: sfReadyMs });
 
     const opportunityNameInput = page.getByRole('textbox', { name: 'Opportunity Name' });
