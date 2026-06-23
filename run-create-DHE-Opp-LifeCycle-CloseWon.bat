@@ -10,7 +10,7 @@ REM    SALESFORCE_PASSWORD
 REM
 REM  Optional in .env:
 REM    SALESFORCE_BASE_URL=https://login.salesforce.com/
-REM    SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home
+REM    SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--uat.sandbox.lightning.force.com/lightning/page/home
 REM
 REM  Extra args are passed to Playwright, e.g.:
 REM    run-create-DHE-Opp-LifeCycle.bat --headed
