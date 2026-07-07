@@ -30,7 +30,7 @@ REM ============================================================================
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home"
+set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--uat.sandbox.lightning.force.com/lightning/page/home"
 set "PLAYWRIGHT_RESULTS_SUBDIR=create-cases-from-excel"
 
 if not exist "data\create-cases.xlsx" (
