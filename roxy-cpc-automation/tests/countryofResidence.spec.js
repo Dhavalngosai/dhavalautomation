@@ -1,63 +1,76 @@
 const { test, expect } = require('@playwright/test');
-const { clearAndSelectCountryCode, getCountryCodes } = require('../lib/countryCode');
+const { selectCountry, getCountries } = require('../lib/countryResidence'); 
 
 const TARGET_URL =
   'https://cloud.explore.theroxycinemas.com/cpc_roxy_ar_qa?sfid=MDAzUXMwMDAwMGV3Y2llSUFB';
 
-test.describe('Roxy CPC country code', () => {
-  test('clear text box and select each country code from dropdown', async ({ page }) => {
+test.describe('Roxy CPC Country of Residence Value Modification', () => {
+  // Instantiated array to accumulate all matrix data across iterations
+  const finalChangeLogTable = [];
+
+  test('Update Countries of Residence directly', async ({ page }) => {
     await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
+    
+    const countries = await getCountries(page);
+    expect(countries.length).toBeGreaterThan(0);
 
-    const countryCodes = await getCountryCodes(page);
-    expect(countryCodes.length).toBeGreaterThan(0);
+    const countryLimit = Number(process.env.COUNTRY_LIMIT || countries.length);
+    const countriesToRun = countries.slice(0, countryLimit);
+    console.log(`[Setup] Found ${countries.length} countries. Testing ${countriesToRun.length}...`);
 
-    const limit = Number(process.env.COUNTRY_CODE_LIMIT || countryCodes.length);
-    const codesToRun = countryCodes.slice(0, limit);
-    console.log(`Found ${countryCodes.length} country codes. Running ${codesToRun.length}...`);
+    const targetDropdown = page.locator('div:has-text("بلد الإقامة") select').first();
 
-    // Array to store rows for the terminal matrix table
-    const comparisonTable = [];
+    for (let i = 0; i < countriesToRun.length; i++) {
+      const countryName = countriesToRun[i];
 
-    for (let i = 0; i < codesToRun.length; i++) {
-      const code = codesToRun[i];
+      await test.step(`Country of Residence [${i + 1}/${countriesToRun.length}] - ${countryName}`, async () => {
+        // Read the exact text label state inside the element before making adjustments
+        const previousCountry = await targetDropdown.evaluate(el => el.options[el.selectedIndex]?.text || 'Empty').catch(() => 'Empty');
 
-      await test.step(`[${i + 1}/${codesToRun.length}] Select ${code}`, async () => {
-        // 1. Capture original value BEFORE clearing
-        const previousValue = await page.locator('#country-code').inputValue().catch(() => 'Empty');
+        // Select the direct configuration text value
+        await selectCountry(page, countryName);
+        
+        // Robust verification matching the selected text label
+        const currentSelection = await targetDropdown.evaluate(el => el.options[el.selectedIndex]?.text);
+        expect(currentSelection).toBe(countryName);
 
-        // 2. Clear and select the new value
-        await clearAndSelectCountryCode(page, code);
-        await expect(page.locator('#country-code')).toHaveValue(code);
-
-        // 3. Handle saving profile
         let saveStatus = 'No Save Button';
         const saveButton = page.getByRole('button', { name: 'حفظ' });
+        
         if (await saveButton.count()) {
-          await saveButton.click();
-          await page.waitForLoadState('networkidle');
-          saveStatus = 'Saved Successfully';
+          // Promise structure handling parallel page interactions safely without context crashing
+          await Promise.all([
+            saveButton.click(),
+            page.waitForLoadState('load').catch(() => {}),
+            page.waitForTimeout(1500) // Form processing delay threshold padding
+          ]);
+          saveStatus = 'Saved';
         }
 
-        // 4. Push row object to our comparison array
-        comparisonTable.push({
-          'Iteration': `[${i + 1}/${codesToRun.length}]`,
-          'Target Code': code,
-          'Original Value (Before Clear)': previousValue,
-          'New Value (After Selection)': code,
-          'Save Status': saveStatus
+        // Tracking row state modifications
+        finalChangeLogTable.push({
+          'Field Tested': 'Country of Residence',
+          'Selection Target': countryName,
+          'Original Value': previousCountry,
+          'New Value': countryName,
+          'Status': saveStatus
         });
 
-        if (i < codesToRun.length - 1) {
-          await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
+        if (i < countriesToRun.length - 1) {
+          await page.goto(TARGET_URL, { waitUntil: 'networkidle' }).catch(() => {
+            return page.goto(TARGET_URL, { waitUntil: 'domcontentloaded' });
+          });
         }
       });
     }
 
-    // Print the final data breakdown to the terminal in matrix grid format
-    console.log('\n================ VALUE COMPARISON SUMMARY ================');
-    console.table(comparisonTable);
-    console.log('==========================================================\n');
-
-    console.log(`Finished processing ${codesToRun.length} country codes.`);
+    // ==========================================
+    // FINAL CHANGE REPORT MATRIX GENERATION
+    // ==========================================
+    console.log('\n\n' + '='.repeat(90));
+    console.log('               FINAL COUNTRY OF RESIDENCE AUTOMATION CHANGE LOG SUMMARY               ');
+    console.log('='.repeat(90));
+    console.table(finalChangeLogTable);
+    console.log('='.repeat(90) + '\n');
   });
 });
