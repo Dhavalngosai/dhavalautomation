@@ -1,58 +1,62 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test.describe('Residence Country Dropdown Validation Suite', () => {
-  
+
   test('Select every residence country', async ({ page }) => {
-    // CRITICAL: Disable the test runner timeout for this long loop execution
-    test.setTimeout(0); 
+    // Disable all test-runner limits inside this isolated worker block
+    test.setTimeout(0);
 
     const targetUrl = 'https://cloud.explore.theroxycinemas.com/cpc_roxy_ar_qa?sfid=MDAzUXMwMDAwMGV3Y2llSUFB';
-    console.log('Navigating to target page...');
-    await page.goto(targetUrl, { waitUntil: 'networkidle' });
+    
+    console.log('Navigating to landing instance...');
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-    console.log('Extracting country codes...');
+    console.log('Extracting country code items...');
     const countryCodes = await page.evaluate(() => {
       const options = document.querySelectorAll('#codedatalistOptions option');
       return Array.from(options).map(opt => opt.value).filter(val => val);
     });
 
     const totalItems = countryCodes.length;
-    console.log(`Processing ${totalItems} items...`);
+    console.log(`Discovered ${totalItems} target entries. Beginning loops...`);
 
     const inputSelector = 'input[list="codedatalistOptions"]';
+    const saveButtonSelector = 'button[type="submit"], input[type="submit"], #saveButton';
 
     for (let i = 0; i < totalItems; i++) {
       const code = countryCodes[i];
       console.log(`[${i + 1}/${totalItems}] Processing: ${code}`);
 
       try {
-        await page.waitForSelector(inputSelector, { timeout: 5000 });
+        // Wait cleanly for element visibility
+        await page.waitForSelector(inputSelector, { state: 'visible', timeout: 10000 });
         
-        // Clean input
-        await page.click(inputSelector, { clickCount: 3 });
-        await page.keyboard.press('Backspace');
+        // Force-clear using evaluate to minimize race conditions 
+        await page.locator(inputSelector).evaluate(el => el.value = '');
+        
+        // Use fill instead of slow typing strings letter-by-letter
+        await page.locator(inputSelector).fill(code);
         await page.waitForTimeout(100);
 
-        // Fill code
-        await page.type(inputSelector, code, { delay: 30 });
-
-        const saveButtonSelector = 'button[type="submit"], input[type="submit"], #saveButton'; 
+        // Click save if present
         if (await page.locator(saveButtonSelector).count() > 0) {
-          await page.click(saveButtonSelector);
-          await page.waitForLoadState('networkidle');
+          await page.click(saveButtonSelector, { timeout: 5000 });
+          // Give network requests a quick baseline window to safely push out
+          await page.waitForLoadState('networkidle').catch(() => {});
         }
 
-        // Pacing delay
-        await page.waitForTimeout(1000);
-        
-        // Return to a clean layout state
-        await page.goto(targetUrl, { waitUntil: 'networkidle' });
+        // Brief execution rest period
+        await page.waitForTimeout(500);
 
       } catch (itemError) {
-        console.error(`[Error] Failed processing "${code}":`, itemError.message);
-        // If an individual item fails, reload the page to prevent breaking the next loop item
-        await page.goto(targetUrl, { waitUntil: 'networkidle' }).catch(() => {});
+        console.error(`[Error] Bypassed issue on "${code}":`, itemError.message);
+      } finally {
+        // Force page reset back to square one for the next iteration step 
+        // to fully strip out memory context leaks
+        await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
       }
     }
+    
+    console.log('Job completed!');
   });
 });
