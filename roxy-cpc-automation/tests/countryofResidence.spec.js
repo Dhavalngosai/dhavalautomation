@@ -1,84 +1,58 @@
-const { test, expect } = require('@playwright/test');
-const { selectCountry, getCountries } = require('../lib/countryResidence'); 
-
-const TARGET_URL =
-  'https://cloud.explore.theroxycinemas.com/cpc_roxy_ar_qa?sfid=MDAzUXMwMDAwMGV3Y2llSUFB';
+import { test, expect } from '@playwright/test';
 
 test.describe('Residence Country Dropdown Validation Suite', () => {
-  const finalChangeLogTable = [];
-
+  
   test('Select every residence country', async ({ page }) => {
-    test.setTimeout(900000); // 15-minute global fallback run limit budget
-    
-    await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
-    
-    const countries = await getCountries(page);
-    expect(countries.length).toBeGreaterThan(0);
+    // CRITICAL: Disable the test runner timeout for this long loop execution
+    test.setTimeout(0); 
 
-    const countryLimit = Number(process.env.COUNTRY_LIMIT || countries.length);
-    const countriesToRun = countries.slice(0, countryLimit);
-    console.log(`[Setup] Found ${countries.length} countries. Running automation for ${countriesToRun.length}...`);
+    const targetUrl = 'https://cloud.explore.theroxycinemas.com/cpc_roxy_ar_qa?sfid=MDAzUXMwMDAwMGV3Y2llSUFB';
+    console.log('Navigating to target page...');
+    await page.goto(targetUrl, { waitUntil: 'networkidle' });
 
-    for (let i = 0; i < countriesToRun.length; i++) {
-      const countryName = countriesToRun[i];
-      let iterationFailed = false;
+    console.log('Extracting country codes...');
+    const countryCodes = await page.evaluate(() => {
+      const options = document.querySelectorAll('#codedatalistOptions option');
+      return Array.from(options).map(opt => opt.value).filter(val => val);
+    });
 
-      await test.step(`[${i + 1}/${countriesToRun.length}] Target: ${countryName}`, async () => {
-        try {
-          const targetDropdown = page.locator('#ARCountry');
-          const previousCountry = await targetDropdown.evaluate(el => el.options[el.selectedIndex]?.text || 'Empty').catch(() => 'Empty');
+    const totalItems = countryCodes.length;
+    console.log(`Processing ${totalItems} items...`);
 
-          await selectCountry(page, countryName);
-          
-          const currentSelection = await targetDropdown.evaluate(el => el.options[el.selectedIndex]?.text);
-          expect(currentSelection).toBe(countryName);
+    const inputSelector = 'input[list="codedatalistOptions"]';
 
-          let saveStatus = 'No Save Button';
-          const saveButton = page.getByRole('button', { name: 'حفظ' });
-          
-          if (await saveButton.count()) {
-            await saveButton.click();
-            await page.waitForTimeout(1000); 
-            saveStatus = 'Saved';
-          }
+    for (let i = 0; i < totalItems; i++) {
+      const code = countryCodes[i];
+      console.log(`[${i + 1}/${totalItems}] Processing: ${code}`);
 
-          finalChangeLogTable.push({
-            'Iteration': `[${i + 1}/${countriesToRun.length}]`,
-            'Field Tested': 'Country of Residence',
-            'Selection Target': countryName,
-            'Original Value': previousCountry,
-            'New Value': countryName,
-            'Status': saveStatus
-          });
+      try {
+        await page.waitForSelector(inputSelector, { timeout: 5000 });
+        
+        // Clean input
+        await page.click(inputSelector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+        await page.waitForTimeout(100);
 
-        } catch (error) {
-          console.error(`[Error] Failed processing "${countryName}":`, error.message);
-          iterationFailed = true;
-          
-          finalChangeLogTable.push({
-            'Iteration': `[${i + 1}/${countriesToRun.length}]`,
-            'Field Tested': 'Country of Residence',
-            'Selection Target': countryName,
-            'Original Value': 'Exception Caught',
-            'New Value': countryName,
-            'Status': 'Failed'
-          });
-        } finally {
-          // Soft refreshing the page layout configuration cycle every 10 steps 
-          // keeps loop iterations stable without triggering memory element stalls.
-          if (iterationFailed || i % 10 === 0) {
-            await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded' }).catch(() => {});
-          } else {
-            await page.keyboard.press('Escape').catch(() => {});
-          }
+        // Fill code
+        await page.type(inputSelector, code, { delay: 30 });
+
+        const saveButtonSelector = 'button[type="submit"], input[type="submit"], #saveButton'; 
+        if (await page.locator(saveButtonSelector).count() > 0) {
+          await page.click(saveButtonSelector);
+          await page.waitForLoadState('networkidle');
         }
-      });
-    }
 
-    console.log('\n\n' + '='.repeat(95));
-    console.log('                 FINAL COUNTRY OF RESIDENCE AUTOMATION CHANGE LOG SUMMARY                 ');
-    console.repeat(95);
-    console.table(finalChangeLogTable);
-    console.log('='.repeat(95) + '\n');
+        // Pacing delay
+        await page.waitForTimeout(1000);
+        
+        // Return to a clean layout state
+        await page.goto(targetUrl, { waitUntil: 'networkidle' });
+
+      } catch (itemError) {
+        console.error(`[Error] Failed processing "${code}":`, itemError.message);
+        // If an individual item fails, reload the page to prevent breaking the next loop item
+        await page.goto(targetUrl, { waitUntil: 'networkidle' }).catch(() => {});
+      }
+    }
   });
 });

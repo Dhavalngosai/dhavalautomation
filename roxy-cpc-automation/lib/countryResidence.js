@@ -1,28 +1,32 @@
 /**
- * Pick a value dynamically from a Select2 Custom Dropdown.
+ * Pick a value dynamically from a Select2 Custom Dropdown using native browser context execution.
  * @param {import('@playwright/test').Page} page
- * @param {string} countryName e.g. "الإمارات العربية المتحدة"
+ * @param {string} countryName e.g. "المملكة العربية السعودية"
  */
 async function selectCountry(page, countryName) {
-  // Direct interaction target bypassing Select2 state visibility glitches
-  const select2Trigger = page.locator('.select2-container:has(select#ARCountry), #ARCountry + .select2, select#ARCountry').first();
-  
-  // Force click calculation to open the option tree panel even if elements shift out of standard alignment
-  await select2Trigger.scrollIntoViewIfNeeded({ timeout: 3000 }).catch(() => {});
-  await select2Trigger.click({ force: true });
+  const dropdown = page.locator('#ARCountry');
+  await dropdown.waitFor({ state: 'attached', timeout: 5000 });
 
-  // Look for the dynamic list options that drop down anywhere on the page body context
-  const searchInput = page.locator('input.select2-search__field, .select2-dropdown input').first();
-  await searchInput.waitFor({ state: 'visible', timeout: 2000 }).catch(() => {});
+  // Native execution bypassing the UI search input completely
+  await page.evaluate((targetName) => {
+    const selectEl = document.querySelector('#ARCountry');
+    if (!selectEl) return;
 
-  if (await searchInput.isVisible()) {
-    await searchInput.fill(countryName);
-    await page.keyboard.press('Enter');
-  } else {
-    // Exact structural class fallback selecting matching text list items natively
-    const targetOption = page.locator(`.select2-results__option:has-text("${countryName}")`).first();
-    await targetOption.click({ force: true });
-  }
+    const targetOption = Array.from(selectEl.options).find(
+      opt => opt.textContent.trim() === targetName
+    );
+
+    if (targetOption) {
+      selectEl.value = targetOption.value;
+      selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+
+      if (window.$ && typeof window.$('#ARCountry').trigger === 'function') {
+        window.$('#ARCountry').trigger('change');
+      }
+    } else {
+      throw new Error(`Country option label matching "${targetName}" not found in DOM list.`);
+    }
+  }, countryName);
 }
 
 /**
@@ -41,7 +45,4 @@ async function getCountries(page) {
   );
 }
 
-module.exports = { 
-  selectCountry, 
-  getCountries 
-};
+module.exports = { selectCountry, getCountries };
