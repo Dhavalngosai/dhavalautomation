@@ -15,38 +15,48 @@ test.describe('Roxy CPC country code', () => {
     const codesToRun = countryCodes.slice(0, limit);
     console.log(`Found ${countryCodes.length} country codes. Running ${codesToRun.length}...`);
 
+    // Array to store rows for the terminal matrix table
+    const comparisonTable = [];
+
     for (let i = 0; i < codesToRun.length; i++) {
       const code = codesToRun[i];
 
       await test.step(`[${i + 1}/${codesToRun.length}] Select ${code}`, async () => {
-        // --- Added: Fetch the original value before making any changes ---
-        const previousValue = await page.locator('#country-code').inputValue().catch(() => 'Unknown/Empty');
+        // 1. Capture original value BEFORE clearing
+        const previousValue = await page.locator('#country-code').inputValue().catch(() => 'Empty');
 
-        console.log(
-          `[${i + 1}/${codesToRun.length}] Changing country code | Original: "${previousValue}" -> New: "${code}"`
-        );
-        
+        // 2. Clear and select the new value
         await clearAndSelectCountryCode(page, code);
         await expect(page.locator('#country-code')).toHaveValue(code);
-        
-        console.log(
-          `[${i + 1}/${codesToRun.length}] Successfully selected "${code}" (replaced "${previousValue}")`
-        );
 
+        // 3. Handle saving profile
+        let saveStatus = 'No Save Button';
         const saveButton = page.getByRole('button', { name: 'حفظ' });
         if (await saveButton.count()) {
           await saveButton.click();
           await page.waitForLoadState('networkidle');
-          console.log(`[${i + 1}/${codesToRun.length}] Saved profile with country code ${code}`);
-        } else {
-          console.log(`[${i + 1}/${codesToRun.length}] Save button not found for ${code}`);
+          saveStatus = 'Saved Successfully';
         }
+
+        // 4. Push row object to our comparison array
+        comparisonTable.push({
+          'Iteration': `[${i + 1}/${codesToRun.length}]`,
+          'Target Code': code,
+          'Original Value (Before Clear)': previousValue,
+          'New Value (After Selection)': code,
+          'Save Status': saveStatus
+        });
 
         if (i < codesToRun.length - 1) {
           await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
         }
       });
     }
+
+    // Print the final data breakdown to the terminal in matrix grid format
+    console.log('\n================ VALUE COMPARISON SUMMARY ================');
+    console.table(comparisonTable);
+    console.log('==========================================================\n');
 
     console.log(`Finished processing ${codesToRun.length} country codes.`);
   });
