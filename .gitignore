@@ -11,6 +11,17 @@ blob-report/
 playwright/.cache/
 playwright/.auth/
 
+# CPC run artifacts (large local outputs)
+CPCs/Backup_CPC_QA/
+**/*Results*/
+**/*_result*/
+**/*_Result*/
+**/LIVE RESULTS/
+**/LIVE_RESULTS/
+**/QA VERSION*/
+*.zip
+*.webm
+
 # Sync logs
 logs/
 

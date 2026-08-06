@@ -1,0 +1,7 @@
+node_modules/
+playwright-report/
+test-results/
+MG_CPC_English_Results/
+MG_CPC_Arabic_Results/
+MG_CPC_Results/
+.env

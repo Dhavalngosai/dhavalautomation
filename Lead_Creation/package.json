@@ -1,0 +1,6 @@
+{
+  "name": "lead-creation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Salesforce Lead creation Playwright script (uses root @playwright/test)"
+}

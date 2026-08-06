@@ -1,0 +1,7 @@
+node_modules/
+playwright-report/
+test-results/
+Roxy_CPC_English_Results/
+Roxy_CPC_Arabic_Results/
+LIVE RESULTS/
+.env

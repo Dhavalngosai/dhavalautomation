@@ -1,0 +1,36 @@
+{
+  "name": "roxy-cpc-automation",
+  "version": "1.0.0",
+  "description": "Playwright automation for Roxy Live CPC (Customer Preference Center)",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:country-code-and-nationality": "playwright test tests/country-code-and-nationality.spec.js",
+    "test:country-code-and-nationality:headed": "playwright test tests/country-code-and-nationality.spec.js --headed",
+    "test:country-of-residence": "playwright test tests/country-of-residence.spec.js",
+    "test:country-of-residence:headed": "playwright test tests/country-of-residence.spec.js --headed",
+    "test:all-fields": "playwright test tests/country-code-and-nationality.spec.js tests/country-of-residence.spec.js",
+    "test:all-fields:headed": "playwright test tests/country-code-and-nationality.spec.js tests/country-of-residence.spec.js --headed",
+    "test:arabic-country-code-and-nationality": "playwright test tests/arabic/country-code-and-nationality.spec.js",
+    "test:arabic-country-code-and-nationality:headed": "playwright test tests/arabic/country-code-and-nationality.spec.js --headed",
+    "test:arabic-country-of-residence": "playwright test tests/arabic/country-of-residence.spec.js",
+    "test:arabic-country-of-residence:headed": "playwright test tests/arabic/country-of-residence.spec.js --headed",
+    "test:arabic-all-fields": "playwright test tests/arabic/country-code-and-nationality.spec.js tests/arabic/country-of-residence.spec.js",
+    "test:arabic-all-fields:headed": "playwright test tests/arabic/country-code-and-nationality.spec.js tests/arabic/country-of-residence.spec.js --headed",
+    "automation": "node automation.js",
+    "report": "playwright show-report playwright-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "dotenv": "^16.6.1"
+  },
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

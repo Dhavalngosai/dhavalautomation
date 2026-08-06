@@ -1,0 +1,26 @@
+@echo off
+setlocal enabledelayedexpansion
+
+REM Run TGP CPC profile update (Country code + Nationality → Save).
+REM Usage:
+REM   run-tgp-cpc-update-profile.bat
+REM   run-tgp-cpc-update-profile.bat --headed
+REM   run-tgp-cpc-update-profile.bat --list
+
+cd /d "%~dp0"
+
+if not exist "package.json" (
+  echo ERROR: package.json not found. Please run this from the TGP_CPC folder.
+  exit /b 1
+)
+
+if not exist "node_modules\@playwright\test" (
+  echo Installing dependencies...
+  call npm install
+  if errorlevel 1 exit /b %ERRORLEVEL%
+  call npx playwright install chromium
+  if errorlevel 1 exit /b %ERRORLEVEL%
+)
+
+call npm test -- tests/tgp-cpc-update-profile.spec.ts %*
+exit /b %ERRORLEVEL%

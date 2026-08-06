@@ -1,0 +1,30 @@
+{
+  "name": "dpr-cpc-automation",
+  "version": "1.0.0",
+  "description": "Playwright automation for Dubai Parks and Resorts CPC (Customer Preference Center)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:second50": "playwright test tests/country-code-and-nationality-second-50.spec.ts tests/country-of-residence-second-50.spec.ts",
+    "test:second50:headed": "playwright test tests/country-code-and-nationality-second-50.spec.ts tests/country-of-residence-second-50.spec.ts --headed",
+    "test:country-residence-second50": "playwright test tests/country-of-residence-second-50.spec.ts",
+    "test:country-residence-second50:headed": "playwright test tests/country-of-residence-second-50.spec.ts --headed",
+    "test:arabic-second50": "playwright test tests/arabic/country-code-and-nationality-second-50.spec.ts tests/arabic/country-of-residence-second-50.spec.ts",
+    "test:arabic-second50:headed": "playwright test tests/arabic/country-code-and-nationality-second-50.spec.ts tests/arabic/country-of-residence-second-50.spec.ts --headed",
+    "test:arabic-country-residence-second50": "playwright test tests/arabic/country-of-residence-second-50.spec.ts",
+    "test:arabic-country-residence-second50:headed": "playwright test tests/arabic/country-of-residence-second-50.spec.ts --headed",
+    "report": "playwright show-report playwright-report"
+  },
+  "keywords": ["playwright", "dpr", "cpc"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "dotenv": "^16.6.1"
+  },
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

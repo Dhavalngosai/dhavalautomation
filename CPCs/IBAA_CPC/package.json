@@ -1,0 +1,30 @@
+{
+  "name": "ibaa-cpc-automation",
+  "version": "1.0.0",
+  "description": "Playwright automation for Inside Burj Al Arab CPC (Customer Preference Center)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:fifth25": "playwright test tests/country-code-and-nationality-fifth-25.spec.ts tests/country-of-residence-fifth-25.spec.ts",
+    "test:fifth25:headed": "playwright test tests/country-code-and-nationality-fifth-25.spec.ts tests/country-of-residence-fifth-25.spec.ts --headed",
+    "test:country-residence-fifth25": "playwright test tests/country-of-residence-fifth-25.spec.ts",
+    "test:country-residence-fifth25:headed": "playwright test tests/country-of-residence-fifth-25.spec.ts --headed",
+    "test:arabic-fifth25": "playwright test tests/arabic/country-code-and-nationality-fifth-25.spec.ts tests/arabic/country-of-residence-fifth-25.spec.ts",
+    "test:arabic-fifth25:headed": "playwright test tests/arabic/country-code-and-nationality-fifth-25.spec.ts tests/arabic/country-of-residence-fifth-25.spec.ts --headed",
+    "test:arabic-country-residence-fifth25": "playwright test tests/arabic/country-of-residence-fifth-25.spec.ts",
+    "test:arabic-country-residence-fifth25:headed": "playwright test tests/arabic/country-of-residence-fifth-25.spec.ts --headed",
+    "report": "playwright show-report playwright-report"
+  },
+  "keywords": ["playwright", "ibaa", "cpc", "insideburjalarab"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "dotenv": "^16.6.1"
+  },
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

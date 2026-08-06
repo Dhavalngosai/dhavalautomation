@@ -1,0 +1,30 @@
+{
+  "name": "dhe-b2b-cpc-automation",
+  "version": "1.0.0",
+  "description": "Playwright automation for DHE B2B CPC (Customer Preference Center)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:from226": "playwright test tests/country-code-and-nationality-from-226.spec.ts tests/country-of-residence-from-226.spec.ts",
+    "test:from226:headed": "playwright test tests/country-code-and-nationality-from-226.spec.ts tests/country-of-residence-from-226.spec.ts --headed",
+    "test:country-residence-from226": "playwright test tests/country-of-residence-from-226.spec.ts",
+    "test:country-residence-from226:headed": "playwright test tests/country-of-residence-from-226.spec.ts --headed",
+    "test:arabic-from226": "playwright test tests/arabic/country-code-and-nationality-from-226.spec.ts tests/arabic/country-of-residence-from-226.spec.ts",
+    "test:arabic-from226:headed": "playwright test tests/arabic/country-code-and-nationality-from-226.spec.ts tests/arabic/country-of-residence-from-226.spec.ts --headed",
+    "test:arabic-country-residence-from226": "playwright test tests/arabic/country-of-residence-from-226.spec.ts",
+    "test:arabic-country-residence-from226:headed": "playwright test tests/arabic/country-of-residence-from-226.spec.ts --headed",
+    "report": "playwright show-report playwright-report"
+  },
+  "keywords": ["playwright", "dhe-b2b", "cpc", "dhentertainment"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "dotenv": "^16.6.1"
+  },
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

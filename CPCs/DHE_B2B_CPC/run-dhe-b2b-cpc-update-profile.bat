@@ -1,0 +1,25 @@
+@echo off
+setlocal enabledelayedexpansion
+
+REM Run DHE B2B CPC profile update (Country code + Nationality → Save).
+REM Usage:
+REM   run-dhe-b2b-cpc-update-profile.bat
+REM   run-dhe-b2b-cpc-update-profile.bat --headed
+
+cd /d "%~dp0"
+
+if not exist "package.json" (
+  echo ERROR: package.json not found. Please run this from the DHE_B2B_CPC folder.
+  exit /b 1
+)
+
+if not exist "node_modules\@playwright\test" (
+  echo Installing dependencies...
+  call npm install
+  if errorlevel 1 exit /b %ERRORLEVEL%
+  call npx playwright install chromium
+  if errorlevel 1 exit /b %ERRORLEVEL%
+)
+
+call npm test -- tests/dhe-b2b-cpc-update-profile.spec.ts %*
+exit /b %ERRORLEVEL%

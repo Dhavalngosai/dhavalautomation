@@ -39,14 +39,14 @@ test.describe('Salesforce Case History Screenshots - Skip Missing History', () =
     // ==================================
     // CONFIG
     // ==================================
-    const USERNAME = 'dgosai@horizontal.com.qa';
-    const PASSWORD = 'Dhaval@123456';
+    const USERNAME = 'dgosai@horizontal.com.uat';
+    const PASSWORD = 'Dhaval%123456';
 
     const BASE_URL =
-      'https://dhe-org2--qa.sandbox.my.salesforce.com/';
+      'https://dhe-org2--uat.sandbox.my.salesforce.com/';
 
     const CASE_LIST_URL =
-      'https://dhe-org2--qa.sandbox.lightning.force.com/lightning/o/Case/list/?filterName=AllOpenCases';
+      'https://dhe-org2--uat.sandbox.lightning.force.com/lightning/o/Case/list/?filterName=AllOpenCases';
 
     if (!fs.existsSync(EXCEL_PATH)) {
       throw new Error(`Excel file not found: ${EXCEL_PATH}`);
@@ -66,7 +66,7 @@ test.describe('Salesforce Case History Screenshots - Skip Missing History', () =
     await page.goto(BASE_URL);
 
     await page.getByRole('textbox', { name: 'Username' }).fill(USERNAME);
-    await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
+  //  await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
 
     await page.locator('#Login:visible').click();
     //await page.getByRole('button', { name: /Log In/i }).click();

@@ -1,0 +1,30 @@
+{
+  "name": "mg-cpc-automation",
+  "version": "1.0.0",
+  "description": "Playwright automation for Motion Gated Dubai CPC (Customer Preference Center)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:third50": "playwright test tests/country-code-and-nationality-third-50.spec.ts tests/country-of-residence-third-50.spec.ts",
+    "test:third50:headed": "playwright test tests/country-code-and-nationality-third-50.spec.ts tests/country-of-residence-third-50.spec.ts --headed",
+    "test:country-residence-third50": "playwright test tests/country-of-residence-third-50.spec.ts",
+    "test:country-residence-third50:headed": "playwright test tests/country-of-residence-third-50.spec.ts --headed",
+    "test:arabic-third50": "playwright test tests/arabic/country-code-and-nationality-third-50.spec.ts tests/arabic/country-of-residence-third-50.spec.ts",
+    "test:arabic-third50:headed": "playwright test tests/arabic/country-code-and-nationality-third-50.spec.ts tests/arabic/country-of-residence-third-50.spec.ts --headed",
+    "test:arabic-country-residence-third50": "playwright test tests/arabic/country-of-residence-third-50.spec.ts",
+    "test:arabic-country-residence-third50:headed": "playwright test tests/arabic/country-of-residence-third-50.spec.ts --headed",
+    "report": "playwright show-report playwright-report"
+  },
+  "keywords": ["playwright", "mg", "cpc"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "dotenv": "^16.6.1"
+  },
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}
