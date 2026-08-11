@@ -109,48 +109,6 @@ function summarizeRows(rows) {
   };
 }
 
-/**
- * @param {number} durationMs
- * @returns {string}
- */
-function formatDuration(durationMs) {
-  const totalMs = Math.max(0, Math.floor(Number(durationMs) || 0));
-  const totalSeconds = Math.floor(totalMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  }
-  if (totalSeconds > 0) {
-    return `${seconds}s`;
-  }
-  return `${totalMs}ms`;
-}
-
-/**
- * @param {{ pageUrl?: string, startedAt?: number, durationMs?: number }} [options]
- */
-function resolveRunTiming(options = {}) {
-  const pageUrl = typeof options.pageUrl === 'string' ? options.pageUrl.trim() : '';
-  let durationMs = Number(options.durationMs);
-  if (!Number.isFinite(durationMs) && Number.isFinite(options.startedAt)) {
-    durationMs = Date.now() - Number(options.startedAt);
-  }
-  if (!Number.isFinite(durationMs) || durationMs < 0) {
-    durationMs = undefined;
-  }
-  return {
-    pageUrl,
-    durationMs,
-    timeTaken: Number.isFinite(durationMs) ? formatDuration(durationMs) : '',
-  };
-}
-
 function updateRunMetadata(archiveDir, entry) {
   const metadataPath = path.join(archiveDir, 'run-metadata.json');
   let metadata = {
@@ -181,49 +139,16 @@ function updateRunMetadata(archiveDir, entry) {
 /**
  * @param {Record<string, string>[]} rows
  * @param {string} title
- * @param {{ version?: string, timestamp?: string, locale?: string, pageUrl?: string, timeTaken?: string, durationMs?: number }} [meta]
+ * @param {{ version?: string, timestamp?: string, locale?: string }} [meta]
  * @returns {string}
  */
 function buildComparisonHtml(rows, title, meta = {}) {
   const version = meta.version || getPackageVersion();
   const timestamp = meta.timestamp || formatRunTimestamp();
   const locale = meta.locale || 'English';
-  const pageUrl = meta.pageUrl || '';
-  const timeTaken =
-    meta.timeTaken ||
-    (Number.isFinite(meta.durationMs) ? formatDuration(meta.durationMs) : '');
-
-  const metaLines = [
-    `Locale: ${escapeHtml(locale)} | Version: v${escapeHtml(version)} | Run timestamp: ${escapeHtml(timestamp)}`,
-  ];
-  if (pageUrl) {
-    metaLines.push(
-      `Page URL: <a href="${escapeHtml(pageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(pageUrl)}</a>`
-    );
-  }
-  if (timeTaken) {
-    metaLines.push(`Time taken: ${escapeHtml(timeTaken)}`);
-  }
 
   if (!rows.length) {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>${escapeHtml(title)}</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
-    h1 { font-size: 20px; margin-bottom: 8px; }
-    .meta { font-size: 13px; color: #4b5563; margin-bottom: 8px; word-break: break-all; }
-    .meta a { color: #1d4ed8; }
-  </style>
-</head>
-<body>
-  <h1>${escapeHtml(title)}</h1>
-  ${metaLines.map((line) => `<p class="meta">${line}</p>`).join('\n  ')}
-  <p>No comparison data recorded.</p>
-</body>
-</html>`;
+    return `<!DOCTYPE html><html><body><p>No comparison data recorded.</p></body></html>`;
   }
 
   const headers = Object.keys(rows[0]);
@@ -255,9 +180,8 @@ function buildComparisonHtml(rows, title, meta = {}) {
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
     h1 { font-size: 20px; margin-bottom: 8px; }
-    .meta { font-size: 13px; color: #4b5563; margin-bottom: 8px; word-break: break-all; }
-    .meta a { color: #1d4ed8; }
-    table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+    .meta { font-size: 13px; color: #4b5563; margin-bottom: 16px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
     th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
     th { background: #f3f4f6; font-weight: 600; }
     tr:nth-child(even) { background: #f9fafb; }
@@ -267,7 +191,7 @@ function buildComparisonHtml(rows, title, meta = {}) {
 </head>
 <body>
   <h1>${escapeHtml(title)}</h1>
-  ${metaLines.map((line) => `<p class="meta">${line}</p>`).join('\n  ')}
+  <p class="meta">Locale: ${escapeHtml(locale)} | Version: v${escapeHtml(version)} | Run timestamp: ${escapeHtml(timestamp)}</p>
   <table>
     <thead><tr>${headerHtml}</tr></thead>
     <tbody>${bodyHtml}</tbody>
@@ -276,17 +200,10 @@ function buildComparisonHtml(rows, title, meta = {}) {
 </html>`;
 }
 
-/**
- * @param {import('@playwright/test').TestInfo} testInfo
- * @param {Record<string, string>[]} rows
- * @param {string} title
- * @param {{ pageUrl?: string, startedAt?: number, durationMs?: number }} [options]
- */
-function archiveComparisonReport(testInfo, rows, title, options = {}) {
+function archiveComparisonReport(testInfo, rows, title) {
   const { dir, timestamp, version, locale, resultsRoot } = getRunArchiveDir(testInfo.file);
   const reportSlug = slugify(title);
   const reportDir = path.join(dir, reportSlug);
-  const { pageUrl, durationMs, timeTaken } = resolveRunTiming(options);
 
   fs.mkdirSync(reportDir, { recursive: true });
 
@@ -300,9 +217,6 @@ function archiveComparisonReport(testInfo, rows, title, options = {}) {
     version: `v${version}`,
     runTimestamp: timestamp,
     resultsRoot,
-    pageUrl: pageUrl || undefined,
-    durationMs: Number.isFinite(durationMs) ? durationMs : undefined,
-    timeTaken: timeTaken || undefined,
     archivedAt: new Date().toISOString(),
     ...summary,
   };
@@ -318,7 +232,7 @@ function archiveComparisonReport(testInfo, rows, title, options = {}) {
 
   fs.writeFileSync(
     archivedHtmlPath,
-    buildComparisonHtml(rows, title, { version, timestamp, locale, pageUrl, timeTaken, durationMs }),
+    buildComparisonHtml(rows, title, { version, timestamp, locale }),
     'utf8'
   );
   fs.writeFileSync(archivedJsonPath, JSON.stringify(payload, null, 2), 'utf8');
@@ -341,15 +255,11 @@ function archiveComparisonReport(testInfo, rows, title, options = {}) {
  * @param {import('@playwright/test').TestInfo} testInfo
  * @param {Record<string, string>[]} rows
  * @param {string} title
- * @param {{ pageUrl?: string, startedAt?: number, durationMs?: number }} [options]
  */
-async function attachComparisonReport(testInfo, rows, title, options = {}) {
+async function attachComparisonReport(testInfo, rows, title) {
   const { timestamp, version, locale } = getRunArchiveDir(testInfo.file);
-  const { pageUrl, durationMs, timeTaken } = resolveRunTiming(options);
 
   console.log(`\n================ ${title.toUpperCase()} ================`);
-  if (pageUrl) console.log(`Page URL: ${pageUrl}`);
-  if (timeTaken) console.log(`Time taken: ${timeTaken}`);
   console.table(rows);
   console.log('==========================================================\n');
 
@@ -361,7 +271,7 @@ async function attachComparisonReport(testInfo, rows, title, options = {}) {
 
   fs.writeFileSync(
     htmlPath,
-    buildComparisonHtml(rows, title, { version, timestamp, locale, pageUrl, timeTaken, durationMs }),
+    buildComparisonHtml(rows, title, { version, timestamp, locale }),
     'utf8'
   );
   fs.writeFileSync(
@@ -375,9 +285,6 @@ async function attachComparisonReport(testInfo, rows, title, options = {}) {
           runTimestamp: timestamp,
           testFile: testInfo.file,
           testTitle: testInfo.title,
-          pageUrl: pageUrl || undefined,
-          durationMs: Number.isFinite(durationMs) ? durationMs : undefined,
-          timeTaken: timeTaken || undefined,
           ...summarizeRows(rows),
         },
         rows,
@@ -388,7 +295,7 @@ async function attachComparisonReport(testInfo, rows, title, options = {}) {
     'utf8'
   );
 
-  archiveComparisonReport(testInfo, rows, title, options);
+  archiveComparisonReport(testInfo, rows, title);
 
   await testInfo.attach('comparison-table', {
     path: htmlPath,
@@ -405,7 +312,6 @@ module.exports = {
   buildComparisonHtml,
   attachComparisonReport,
   archiveComparisonReport,
-  formatDuration,
   getRunArchiveDir,
   getPackageVersion,
   getLocaleFromTestFile,

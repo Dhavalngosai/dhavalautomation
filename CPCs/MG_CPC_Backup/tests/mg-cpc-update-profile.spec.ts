@@ -26,7 +26,7 @@ import {
 } from '../lib/profileFields.js';
 
 const DEFAULT_URL =
-  'https://cloud.explore.motiongatedubai.com/MGQA_CPC?qs=ABB7InYiOjEsImQiOjQ5MzN9ADMAAAAAAILdOENZHPH8DW2REwRyceKAjd4ir8D4rBIxzTQRN2ABJ4xakeQWRUk79SPDkzYJnQLJgV0-FOKdOIPCLS2J_-Ba1ru41AZ-b_2JnbeDDgc9v_FAkUpCtx7XDvnBWFfXaREGjk9BfFlfbahRFH0&utm_source=sfmc&utm_medium=email&utm_campaign=Sanity+Test+Email+QA&utm_term=%%%3dRedirectTo(CloudPagesURL(2556))%3d%%&utm_EmailName=Sanity+Test+Email+QA&Platform_Source=MG&Date=7/10/2026&utm_id=498789&sfmc_id=116255438';
+  'https://cloud.explore.motiongatedubai.com/CPC_MG?qs=ABB7InYiOjEsImQiOjQ5NDd9ADMAAAAAAJVb8GGwf_ipgr44rmGukshCP5z0weED32xNcH3I-lIX6JQgFF0nNuxBeQ-1h2NhHqPvg-K68gkpbAB1kKMzEBVb-W71ga6R8xXdI4eB1qK5Gi1qihl6z8k9rtOgepmJvAAcStNH9hQQRCyAav8&utm_source=sfmc&utm_medium=email&utm_campaign=Sanity+Test+Email&utm_term=%%%3dRedirectTo(CloudPagesURL(2579))%3d%%&utm_EmailName=Sanity+Test+Email&Platform_Source=MG&Date=7/24/2026&utm_id=502359&sfmc_id=116255438';
 
 const cpcUrl = (process.env.MG_CPC_URL || DEFAULT_URL).trim();
 const countryCode = (process.env.MG_CPC_COUNTRY_CODE || '+971').trim();

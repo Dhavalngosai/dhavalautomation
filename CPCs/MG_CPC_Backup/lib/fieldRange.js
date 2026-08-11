@@ -1,10 +1,10 @@
 /**
  * Parse limit/offset env vars for field loop tests.
- * Default: first batch items 1–15 (offset 0, limit 15) for all fields.
+ * Default: third batch items 101–150 (offset 100, limit 50) for all fields.
  */
 
-/** Items 1–15 — used by Country code, Nationality, and Country of Residence. */
-const FIRST_FIFTEEN_RANGE = { offset: 0, limit: 15 };
+/** Items 101–150 — used by Country code, Nationality, and Country of Residence. */
+const THIRD_FIFTY_RANGE = { offset: 100, limit: 50 };
 
 function parsePositiveInt(value, fallback) {
   const raw = Number(value);
@@ -24,8 +24,8 @@ function parseNonNegInt(value, fallback) {
  * @param {{ limit?: number, offset?: number }} [defaults]
  */
 function getFieldRange(fieldLimitKey, fieldOffsetKey, globalLimitKey, globalOffsetKey, defaults = {}) {
-  const defaultLimit = defaults.limit ?? FIRST_FIFTEEN_RANGE.limit;
-  const defaultOffset = defaults.offset ?? FIRST_FIFTEEN_RANGE.offset;
+  const defaultLimit = defaults.limit ?? THIRD_FIFTY_RANGE.limit;
+  const defaultOffset = defaults.offset ?? THIRD_FIFTY_RANGE.offset;
   const limit = parsePositiveInt(
     process.env[fieldLimitKey] || process.env[globalLimitKey],
     defaultLimit
@@ -53,4 +53,4 @@ function formatRangeLabel(offset, limit) {
   return `items ${start}–${end} (offset ${offset}, limit ${limit})`;
 }
 
-module.exports = { getFieldRange, sliceFieldItems, formatRangeLabel, FIRST_FIFTEEN_RANGE };
+module.exports = { getFieldRange, sliceFieldItems, formatRangeLabel, THIRD_FIFTY_RANGE };
