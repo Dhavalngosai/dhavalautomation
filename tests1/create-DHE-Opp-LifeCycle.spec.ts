@@ -104,7 +104,7 @@ async function openOpportunityRecordByName(page: Page, name: string) {
 
 test.describe('Create DHE Opportunity', () => {
   test('create opp by name → event time → add product → Closed Won', async ({ page }) => {
-    test.setTimeout(300_000);
+    test.setTimeout(600_000);
     test.skip(!testData.username || !testData.password, 'Set SALESFORCE_USERNAME and SALESFORCE_PASSWORD in .env');
 
     await page.setDefaultTimeout(locatorTimeoutMs);

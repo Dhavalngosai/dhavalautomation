@@ -1,20 +1,25 @@
 @echo off
 REM ============================================================================
-REM  run-create-DHE-Opp-LifeCycle-closeLost.bat — DHE Opportunity Closed Lost
+REM  run-create-DHE-Opp-LifeCycle-closeLost.bat — DHE Opportunity Closed Lost lifecycle
 REM ============================================================================
 REM  Runs: tests1\create-DHE-Opp-LifeCycle-closeLost.aspx.ts
 REM
-REM  Required in .env:
+REM  Required in .env (same folder as this batch):
 REM    SALESFORCE_USERNAME
 REM    SALESFORCE_PASSWORD
 REM
+REM  Set by this batch (override in .env if needed):
+REM    SALESFORCE_LIGHTNING_HOME_URL — QA sandbox Lightning home
+REM    SALESFORCE_DHE_RECORD_TYPE_XPATH — DHE Opportunity row in New Opportunity modal
+REM    SALESFORCE_PASSKEY — identity verification code after login
+REM
 REM  Optional in .env:
-REM    SALESFORCE_LIGHTNING_HOME_URL
 REM    SALESFORCE_TEST_LOSS_REASON=Not Interested
 REM    SALESFORCE_TEST_LOSS_REASON_JUSTIFICATION=Automated test closure
 REM
 REM  Extra args are passed to Playwright, e.g.:
 REM    run-create-DHE-Opp-LifeCycle-closeLost.bat --headed
+REM    run-create-DHE-Opp-LifeCycle-closeLost.bat --project=chromium
 REM ============================================================================
 setlocal EnableExtensions
 cd /d "%~dp0"
@@ -48,6 +53,19 @@ if not exist "node_modules" (
   if errorlevel 1 exit /b 1
 )
 
+if not exist "node_modules\@playwright\test" (
+  echo ERROR: @playwright/test not found. Run: npm install
+  exit /b 1
+)
+
+echo Checking Playwright browsers...
+call "%NPM_CMD%" exec -- playwright install chromium
+if errorlevel 1 exit /b 1
+
+set "HEADED_ARGS="
+echo %* | findstr /i /c:"--headed" >nul
+if errorlevel 1 set "HEADED_ARGS=--headed"
+
 if not exist ".env" (
   echo ERROR: .env not found. Copy .env.example to .env and set SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
   exit /b 1
@@ -59,21 +77,26 @@ if not exist "package.json" (
 )
 
 set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home"
+set "SALESFORCE_DHE_RECORD_TYPE_XPATH=.//span[normalize-space()='DHE Opportunity']"
+set "SALESFORCE_PASSKEY=130986"
+set "SALESFORCE_PASSKEY_WAIT_MS=90000"
 set "PLAYWRIGHT_RESULTS_SUBDIR=create-DHE-Opp-LifeCycle-closeLost"
 
-title DHE Opportunity Lifecycle - Closed Lost
+title DHE Opportunity Lifecycle — Closed Lost
 
 echo ============================================
-echo  DHE Opportunity Lifecycle - Closed Lost
+echo  DHE Opportunity Lifecycle — Closed Lost
 echo  Project: %CD%
 echo  Spec: tests1\create-DHE-Opp-LifeCycle-closeLost.aspx.ts
 echo  Lightning home: %SALESFORCE_LIGHTNING_HOME_URL%
+echo  Record type XPath: %SALESFORCE_DHE_RECORD_TYPE_XPATH%
 echo  Results folder: results\create-DHE-Opp-LifeCycle-closeLost\
+echo  Passkey: %SALESFORCE_PASSKEY% (headed browser for WebAuthn if needed)
 echo  Ensure .env has SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
 echo ============================================
 echo.
 
-call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeLost.aspx.ts %*
+call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeLost.aspx.ts %HEADED_ARGS% %*
 
 set "EXITCODE=%ERRORLEVEL%"
 echo.
@@ -83,7 +106,7 @@ if %EXITCODE% equ 0 (
   echo  DHE Opportunity Closed Lost lifecycle finished successfully.
 ) else (
   echo  STATUS: FAIL
-  echo  DHE Opportunity Closed Lost lifecycle failed with Playwright exit code %EXITCODE%.
+  echo  DHE Opportunity Closed Lost lifecycle failed ^(Playwright exit code %EXITCODE%^).
   echo  See results\create-DHE-Opp-LifeCycle-closeLost\playwright-report\ for details.
 )
 echo ============================================

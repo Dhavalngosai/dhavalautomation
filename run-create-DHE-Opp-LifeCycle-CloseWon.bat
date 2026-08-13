@@ -1,20 +1,21 @@
 @echo off
 REM ============================================================================
-REM  run-create-DHE-Opp-LifeCycle.bat — DHE Opportunity full lifecycle
+REM  run-create-DHE-Opp-LifeCycle-CloseWon.bat — DHE Opportunity Closed Won lifecycle
 REM ============================================================================
-REM  Runs: tests1\create-DHE-Opp-LifeCycle.spec.ts
+REM  Runs: tests1\create-DHE-Opp-LifeCycle-closeWon.spec.ts
 REM
 REM  Required in .env (same folder as this batch):
 REM    SALESFORCE_USERNAME
 REM    SALESFORCE_PASSWORD
 REM
-REM  Optional in .env:
-REM    SALESFORCE_BASE_URL=https://login.salesforce.com/
-REM    SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--uat.sandbox.lightning.force.com/lightning/page/home
+REM  Set by this batch (override in .env if needed):
+REM    SALESFORCE_LIGHTNING_HOME_URL — QA sandbox Lightning home
+REM    SALESFORCE_DHE_RECORD_TYPE_XPATH — DHE Opportunity row in New Opportunity modal
+REM    SALESFORCE_PASSKEY — identity verification code after login
 REM
 REM  Extra args are passed to Playwright, e.g.:
-REM    run-create-DHE-Opp-LifeCycle.bat --headed
-REM    run-create-DHE-Opp-LifeCycle.bat --project=chromium
+REM    run-create-DHE-Opp-LifeCycle-CloseWon.bat --headed
+REM    run-create-DHE-Opp-LifeCycle-CloseWon.bat --project=chromium
 REM ============================================================================
 setlocal EnableExtensions
 cd /d "%~dp0"
@@ -48,6 +49,19 @@ if not exist "node_modules" (
   if errorlevel 1 exit /b 1
 )
 
+if not exist "node_modules\@playwright\test" (
+  echo ERROR: @playwright/test not found. Run: npm install
+  exit /b 1
+)
+
+echo Checking Playwright browsers...
+call "%NPM_CMD%" exec -- playwright install chromium
+if errorlevel 1 exit /b 1
+
+set "HEADED_ARGS="
+echo %* | findstr /i /c:"--headed" >nul
+if errorlevel 1 set "HEADED_ARGS=--headed"
+
 if not exist ".env" (
   echo ERROR: .env not found. Copy .env.example to .env and set SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
   exit /b 1
@@ -58,32 +72,37 @@ if not exist "package.json" (
   exit /b 1
 )
 
-set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--uat.sandbox.lightning.force.com/lightning/page/home"
+set "SALESFORCE_LIGHTNING_HOME_URL=https://dhe-org2--qa.sandbox.lightning.force.com/lightning/page/home"
+set "SALESFORCE_DHE_RECORD_TYPE_XPATH=.//span[normalize-space()='DHE Opportunity']"
+set "SALESFORCE_PASSKEY=130986"
+set "SALESFORCE_PASSKEY_WAIT_MS=90000"
 set "PLAYWRIGHT_RESULTS_SUBDIR=create-DHE-Opp-LifeCycle-CloseWon"
 
-title DHE Opportunity Lifecycle — Playwright
+title DHE Opportunity Lifecycle — Closed Won
 
 echo ============================================
-echo  DHE Opportunity Lifecycle
+echo  DHE Opportunity Lifecycle — Closed Won
 echo  Project: %CD%
 echo  Spec: tests1\create-DHE-Opp-LifeCycle-closeWon.spec.ts
 echo  Lightning home: %SALESFORCE_LIGHTNING_HOME_URL%
+echo  Record type XPath: %SALESFORCE_DHE_RECORD_TYPE_XPATH%
 echo  Results folder: results\create-DHE-Opp-LifeCycle-CloseWon\
+echo  Passkey: %SALESFORCE_PASSKEY% (headed browser for WebAuthn if needed)
 echo  Ensure .env has SALESFORCE_USERNAME and SALESFORCE_PASSWORD.
 echo ============================================
 echo.
 
-call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeWon.spec.ts -g "Closed Won" %*
+call "%NPM_CMD%" test -- tests1/create-DHE-Opp-LifeCycle-closeWon.spec.ts -g "Closed Won" %HEADED_ARGS% %*
 
 set "EXITCODE=%ERRORLEVEL%"
 echo.
 echo ============================================
 if %EXITCODE% equ 0 (
   echo  STATUS: PASS
-  echo  DHE Opportunity lifecycle completed successfully.
+  echo  DHE Opportunity Closed Won lifecycle completed successfully.
 ) else (
   echo  STATUS: FAIL
-  echo  DHE Opportunity lifecycle test failed ^(Playwright exit code %EXITCODE%^).
+  echo  DHE Opportunity Closed Won lifecycle test failed ^(Playwright exit code %EXITCODE%^).
   echo  See results\create-DHE-Opp-LifeCycle-CloseWon\playwright-report\ for details.
 )
 echo ============================================
