@@ -18,7 +18,11 @@ import { testData } from '../utils/testData';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { waitForSalesforceReady } = require('../lib/waitHelpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
+const { loginToSandboxAndOpenHome } = require('../lib/salesforceLogin');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { selectOpportunityDHERecordType } = require('../lib/recordTypePicker');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { clickRecordTypeNextAndWait } = require('../pages/NewOpportunityPage');
 
 function addDays(d: Date, days: number): Date {
   const out = new Date(d);
@@ -115,29 +119,12 @@ test.describe('Create DHE Opportunity', () => {
     const visitMmDdYyyy = toMmDdYyyy(visitDate);
     const closeMmDdYyyy = toMmDdYyyy(closeDate);
 
-    await page.goto(SANDBOX_LOGIN);
-    await waitForSalesforceReady(page, { timeout: sfReadyMs });
-
-    const username = page.getByRole('textbox', { name: 'Username' });
-    await username.waitFor({ state: 'visible', ...untilVisible });
-    await username.click();
-    await username.fill(testData.username);
-    await username.press('Tab');
-
-    const password = page.getByRole('textbox', { name: 'Password' });
-    await password.waitFor({ state: 'visible', ...untilVisible });
-    await password.fill(testData.password);
-    await password.press('Enter');
-
-    const sandboxBtn = page.getByRole('button', { name: 'Log In to Sandbox' });
-    if (await sandboxBtn.isVisible().catch(() => false)) {
-      await sandboxBtn.waitFor({ state: 'visible', ...untilVisible });
-      await sandboxBtn.click();
-    }
-    await waitForSalesforceReady(page, { timeout: sfReadyMs });
-
-    await page.goto(LIGHTNING_HOME);
-    await waitForSalesforceReady(page, { timeout: sfReadyMs });
+    await loginToSandboxAndOpenHome(page, {
+      username: testData.username,
+      password: testData.password,
+      sfReadyMs,
+      untilVisible,
+    });
 
     const opportunitiesLink = page.getByRole('link', { name: 'Opportunities' });
     await opportunitiesLink.waitFor({ state: 'visible', ...untilVisible });
@@ -157,9 +144,7 @@ test.describe('Create DHE Opportunity', () => {
 
     const needsRecordTypeNext = await selectOpportunityDHERecordType(page);
     if (needsRecordTypeNext) {
-      const recordTypeNext = page.getByRole('button', { name: 'Next', exact: true });
-      await recordTypeNext.waitFor({ state: 'visible', ...untilVisible });
-      await recordTypeNext.click();
+      await clickRecordTypeNextAndWait(page);
     }
     await waitForSalesforceReady(page, { timeout: sfReadyMs });
 
@@ -376,11 +361,7 @@ test.describe('Create DHE Opportunity', () => {
       await waitForSalesforceReady(page, { timeout: sfReadyMs }).catch(() => {});
     }
 
-    // 3) Closed Won — main opportunity view for this record id (same opp as `opportunityName`).
-    if (oppUrlMatch?.[1]) {
-      await page.goto(`${lightningOrigin}/lightning/r/Opportunity/${oppUrlMatch[1]}/view`);
-      await waitForSalesforceReady(page, { timeout: sfReadyMs });
-    }
+    // 3) Closed Won — main opportunity view for this record.
     await openOpportunityRecordByName(page, opportunityName);
 
     await page.locator('a').filter({ hasText: 'Closed' }).click();
